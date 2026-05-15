@@ -125,6 +125,56 @@ files counted toward coverage. UI components are excluded.
 
 ---
 
+## Test results & coverage
+
+This block is a snapshot of the latest local run on `main`. The same numbers
+are regenerated on every CI run and posted to the **GitHub Actions job
+summary** (open any workflow run on the `Actions` tab and scroll to the
+bottom). `coverage/coverage-summary.json` and `vitest-results.json` are also
+uploaded as artifacts on each run.
+
+### Tests
+
+| Status | Files | Tests | Passed | Failed | Skipped |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 🟢 passing | 6 | 57 | 57 | 0 | 0 |
+
+| File | Tests |
+| --- | ---: |
+| `src/engine/gpx.test.ts` | 16 |
+| `src/engine/projects.test.ts` | 11 |
+| `src/engine/profile.test.ts` | 10 |
+| `src/engine/stitch.test.ts` | 8 |
+| `src/engine/detect.test.ts` | 7 |
+| `src/engine/cut.test.ts` | 5 |
+
+### Coverage
+
+| Metric | Covered / Total | % |
+| --- | --- | ---: |
+| **lines** 🟢 | 365 / 395 | **92.4%** |
+| **statements** 🟢 | 425 / 468 | **90.8%** |
+| **functions** 🟢 | 41 / 42 | **97.6%** |
+| **branches** 🟢 | 182 / 231 | **78.8%** |
+
+| File | Lines | Statements | Functions | Branches |
+| --- | ---: | ---: | ---: | ---: |
+| `src/engine/cut.ts` | 🟡 72.9% | 72.4% | 75.0% | 62.5% |
+| `src/engine/detect.ts` | 🟢 91.5% | 91.5% | 100.0% | 80.4% |
+| `src/engine/projects.ts` | 🟢 93.0% | 92.2% | 100.0% | 88.9% |
+| `src/engine/profile.ts` | 🟢 95.6% | 91.7% | 100.0% | 75.6% |
+| `src/engine/gpx.ts` | 🟢 100.0% | 100.0% | 100.0% | 83.3% |
+| `src/engine/stitch.ts` | 🟢 100.0% | 98.0% | 100.0% | 85.7% |
+
+Regenerate locally:
+
+```sh
+npm run coverage     # writes coverage/ + vitest-results.json
+npm run ci:summary   # prints the markdown summary you see above
+```
+
+---
+
 ## Architecture
 
 ```

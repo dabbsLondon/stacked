@@ -5,3 +5,4 @@ dist
 *.local
 .env*
 coverage
+vitest-results.json

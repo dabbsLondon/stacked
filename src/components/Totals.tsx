@@ -1,14 +1,27 @@
-import type { Climb } from '../types';
+import type { Bridge, Climb } from '../types';
 
 interface Props {
   climbs: Climb[];
+  bridges?: (Bridge | null)[];
 }
 
-export function Totals({ climbs }: Props) {
+export function Totals({ climbs, bridges }: Props) {
   if (climbs.length === 0) return null;
 
-  const dist = climbs.reduce((s, c) => s + c.distanceKm, 0);
-  const ascent = climbs.reduce((s, c) => s + c.ascentM, 0);
+  const climbDist = climbs.reduce((s, c) => s + c.distanceKm, 0);
+  const climbAscent = climbs.reduce((s, c) => s + c.ascentM, 0);
+
+  const bridgeList = bridges ?? [];
+  const bridgeDist = bridgeList.reduce((s, b) => s + (b?.lengthKm ?? 0), 0);
+  const bridgeAscent = bridgeList.reduce(
+    (s, b) =>
+      s +
+      (b && b.gradient > 0 ? (b.gradient / 100) * b.lengthKm * 1000 : 0),
+    0,
+  );
+
+  const dist = climbDist + bridgeDist;
+  const ascent = climbAscent + bridgeAscent;
   const avgGrade = dist > 0 ? ascent / (dist * 10) : 0;
   const estMin = (dist / 18) * 60 + (ascent / 500) * 10;
 
@@ -33,6 +46,11 @@ export function Totals({ climbs }: Props) {
           <div className="mono total-sub">avg gradient</div>
         </div>
       </div>
+      {bridgeDist > 0 && (
+        <div className="totals-bridge mono">
+          incl. {bridgeDist.toFixed(1)}km of bridges
+        </div>
+      )}
     </div>
   );
 }

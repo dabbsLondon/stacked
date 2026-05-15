@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>STACKED · the plan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+:root{
+  --bg:#0a0a0c;--bg-2:#111114;--surface:#16161a;--surface-2:#1d1d22;
+  --border:#2a2a2e;--border-hi:#3a3a40;
+  --text:#f5f5f7;--text-2:#b8b8bd;--text-3:#75757b;
+  --orange:#ff5f1f;--orange-2:#ffae87;--yellow:#fff200;--teal:#5eead4;--pink:#ff4d8d;
+}
+body{
+  background:var(--bg);color:var(--text);
+  font:400 17px/1.6 'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
+  -webkit-font-smoothing:antialiased;overflow-x:hidden;
+}
+h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif;letter-spacing:-.02em;line-height:1.05;font-weight:700}
+.mono{font-family:'JetBrains Mono',monospace}
+em{font-style:normal;color:var(--yellow)}
+strong{color:var(--text)}
+
+.eyebrow{
+  color:var(--orange);font-family:'JetBrains Mono',monospace;
+  font-size:12px;font-weight:500;text-transform:uppercase;
+  letter-spacing:.18em;margin-bottom:18px;
+}
+.container{max-width:1180px;margin:0 auto;padding:0 36px}
+section{padding:140px 0;position:relative}
+section + section{border-top:1px solid var(--border)}
+.section-title{font-size:clamp(40px,5.5vw,76px);margin-bottom:28px;letter-spacing:-.03em}
+.section-intro{font-size:19px;color:var(--text-2);max-width:760px;margin-bottom:64px;line-height:1.55}
+
+/* topbar */
+.topbar{
+  position:fixed;top:0;left:0;right:0;z-index:100;
+  display:flex;justify-content:space-between;align-items:center;
+  padding:18px 36px;background:rgba(10,10,12,.72);
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);
+}
+.brand{font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:700;letter-spacing:.04em}
+.brand .dot{color:var(--orange)}
+.toc{display:flex;gap:26px;font-family:'JetBrains Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:.14em}
+.toc a{color:var(--text-3);text-decoration:none;transition:color .15s}
+.toc a:hover{color:var(--text)}
+@media (max-width:780px){.toc{display:none}}
+
+/* hero */
+.hero{
+  min-height:100vh;display:flex;flex-direction:column;
+  justify-content:center;align-items:center;text-align:center;
+  position:relative;overflow:hidden;padding-top:100px;border:none!important;
+}
+.hero-bg{position:absolute;inset:0;z-index:0;pointer-events:none;display:flex;align-items:flex-end;opacity:.55}
+.hero-bg svg{width:100%;height:auto;display:block}
+.hero-mask{position:absolute;inset:0;z-index:1;pointer-events:none;
+  background:linear-gradient(180deg,var(--bg) 0%,transparent 28%,transparent 70%,var(--bg) 100%)}
+.hero-content{position:relative;z-index:2}
+.hero-badge{
+  display:inline-flex;align-items:center;gap:10px;padding:8px 18px;
+  border:1px solid var(--border-hi);border-radius:999px;
+  background:rgba(20,20,22,.6);color:var(--yellow);
+  font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:500;
+  text-transform:uppercase;letter-spacing:.18em;margin-bottom:40px;
+  backdrop-filter:blur(8px);
+}
+.hero-badge::before{
+  content:"";display:inline-block;width:8px;height:8px;border-radius:50%;
+  background:var(--yellow);box-shadow:0 0 12px var(--yellow);animation:pulse 2.4s ease-in-out infinite;
+}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.85)}}
+.hero h1{
+  font-size:clamp(72px,17vw,240px);
+  background:linear-gradient(180deg,#fff 0%,var(--orange-2) 60%,var(--orange) 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  font-weight:700;letter-spacing:-.05em;line-height:.9;
+}
+.hero-tagline{
+  font-size:clamp(20px,2.4vw,28px);color:var(--text-2);margin:28px auto 0;
+  max-width:680px;font-weight:400;line-height:1.35;
+}
+.hero-cta{margin-top:56px;display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+.btn{
+  display:inline-flex;align-items:center;gap:10px;padding:14px 26px;
+  border-radius:999px;font-family:'JetBrains Mono',monospace;font-size:12px;
+  font-weight:500;text-transform:uppercase;letter-spacing:.14em;
+  text-decoration:none;cursor:pointer;transition:all .2s;
+  border:1px solid var(--border-hi);color:var(--text);background:var(--surface);
+}
+.btn.primary{background:var(--orange);border-color:var(--orange);color:#1a0a00}
+.btn:hover{transform:translateY(-1px);border-color:var(--orange)}
+.scroll-hint{
+  position:absolute;bottom:38px;left:50%;transform:translateX(-50%);
+  font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text-3);
+  text-transform:uppercase;letter-spacing:.3em;z-index:2;
+  animation:drift 2s ease-in-out infinite;
+}
+@keyframes drift{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(6px)}}
+
+/* stats */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:56px}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;transition:border-color .2s}
+.stat:hover{border-color:var(--orange)}
+.stat-label{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-3);text-transform:uppercase;letter-spacing:.16em;margin-bottom:12px}
+.stat-value{font-family:'Space Grotesk',sans-serif;font-size:32px;font-weight:700;color:var(--yellow);letter-spacing:-.02em;line-height:1}
+.stat-sub{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text-3);text-transform:uppercase;letter-spacing:.16em;margin-top:8px}
+
+/* steps */
+.step{display:grid;grid-template-columns:1fr 1.2fr;gap:80px;align-items:center;margin-bottom:100px}
+.step:last-child{margin-bottom:0}
+.step.reverse{grid-template-columns:1.2fr 1fr}
+.step.reverse .step-text{order:2}
+.step.reverse .step-figure{order:1}
+.step-num{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--orange);letter-spacing:.2em;margin-bottom:16px}
+.step-title{font-size:clamp(28px,3.4vw,42px);margin-bottom:20px}
+.step-desc{color:var(--text-2);font-size:17px;line-height:1.65}
+.step-desc + .step-desc{margin-top:14px}
+.step-figure{
+  background:var(--surface);border:1px solid var(--border);border-radius:18px;
+  padding:32px;aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;
+}
+.step-figure svg{width:100%;height:100%}
+@media (max-width:900px){
+  .step,.step.reverse{grid-template-columns:1fr;gap:30px}
+  .step.reverse .step-text{order:1}.step.reverse .step-figure{order:2}
+}
+
+/* stack */
+.stack-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-top:40px}
+.stack-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:26px;transition:border-color .2s}
+.stack-card:hover{border-color:var(--orange)}
+.stack-card-label{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--orange);text-transform:uppercase;letter-spacing:.16em;margin-bottom:12px}
+.stack-card-title{font-family:'Space Grotesk',sans-serif;font-size:22px;font-weight:700;margin-bottom:10px}
+.stack-card-desc{font-size:14px;color:var(--text-2);line-height:1.55}
+.tech-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}
+.tag{font-family:'JetBrains Mono',monospace;font-size:11px;padding:4px 10px;background:var(--bg-2);border:1px solid var(--border);border-radius:6px;color:var(--text-2)}
+
+/* timeline */
+.timeline{position:relative;padding-left:60px;margin-top:40px}
+.timeline::before{content:'';position:absolute;left:22px;top:14px;bottom:14px;width:2px;background:linear-gradient(180deg,var(--orange) 0%,var(--yellow) 50%,var(--teal) 100%)}
+.milestone{position:relative;margin-bottom:28px;padding:26px 30px;background:var(--surface);border:1px solid var(--border);border-radius:14px;transition:all .2s}
+.milestone:hover{border-color:var(--orange);transform:translateX(4px)}
+.milestone::before{content:'';position:absolute;left:-47px;top:32px;width:14px;height:14px;border-radius:50%;background:var(--bg);border:3px solid var(--orange);box-shadow:0 0 0 4px var(--bg)}
+.milestone-num{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--orange);letter-spacing:.2em;margin-bottom:10px}
+.milestone-title{font-family:'Space Grotesk',sans-serif;font-size:22px;font-weight:700;margin-bottom:8px}
+.milestone-desc{color:var(--text-2);font-size:15px;line-height:1.55}
+.milestone-meta{display:flex;gap:14px;margin-top:12px;flex-wrap:wrap}
+.milestone-meta span{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text-3);text-transform:uppercase;letter-spacing:.14em}
+.milestone-meta span::before{content:"→ ";color:var(--orange)}
+@media (max-width:600px){
+  .timeline{padding-left:36px}.timeline::before{left:12px}.milestone::before{left:-28px}
+}
+
+/* sources */
+.sources-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:14px;margin-top:40px}
+.source{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:22px;transition:all .2s}
+.source:hover{border-color:var(--teal);transform:translateY(-2px)}
+.source-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:6px}
+.source-name{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:18px}
+.source-tag{font-family:'JetBrains Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:.16em;padding:3px 8px;border-radius:4px;flex-shrink:0}
+.source-tag.free{background:rgba(94,234,212,.15);color:var(--teal)}
+.source-tag.paid{background:rgba(255,95,31,.15);color:var(--orange)}
+.source-tag.freemium{background:rgba(255,242,0,.15);color:var(--yellow)}
+.source-domain{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-3);margin-bottom:12px}
+.source-desc{font-size:14px;color:var(--text-2);line-height:1.55}
+
+/* wireframe */
+.wireframe-wrap{margin-top:50px;background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:32px}
+.wireframe-wrap svg{width:100%;height:auto;display:block}
+.wireframe-notes{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:28px}
+.wf-note{padding:18px;background:var(--bg-2);border-left:3px solid var(--orange);border-radius:0 8px 8px 0}
+.wf-note .tag{margin-bottom:10px;display:inline-block}
+.wf-note p{font-size:13px;color:var(--text-2);line-height:1.55}
+
+/* context cards */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:40px}
+@media (max-width:780px){.two-col{grid-template-columns:1fr}}
+.context-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:30px}
+.context-card h3{font-size:24px;margin-bottom:12px}
+.context-card>p{color:var(--text-2);font-size:15px;line-height:1.6;margin-bottom:18px}
+.context-card ul{list-style:none;margin:0;padding:0}
+.context-card li{padding:14px 0;border-top:1px dashed var(--border);font-size:14px;color:var(--text-2);line-height:1.55}
+.context-card li:first-child{border-top:none;padding-top:0}
+.context-card li strong{display:block;color:var(--orange);font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.14em;margin-bottom:4px}
+
+/* next */
+.next{background:linear-gradient(135deg,rgba(255,95,31,.08) 0%,transparent 60%);border:1px solid var(--orange);border-radius:20px;padding:54px;margin-top:40px}
+.next h2{font-size:clamp(28px,3.5vw,40px);margin-bottom:14px}
+.next p{color:var(--text-2);font-size:16px;max-width:620px}
+.checklist{list-style:none;margin-top:34px}
+.checklist li{padding:18px 0;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:18px}
+.checklist li:last-child{border-bottom:none}
+.check-box{flex-shrink:0;width:22px;height:22px;border:2px solid var(--orange);border-radius:6px}
+.check-num{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--orange);flex-shrink:0;width:30px}
+.check-text{flex:1;font-size:16px;color:var(--text);line-height:1.4}
+.check-text small{display:block;color:var(--text-3);font-size:13px;margin-top:4px;font-weight:400}
+
+footer{padding:50px 0 80px;border-top:1px solid var(--border);text-align:center;color:var(--text-3);font-family:'JetBrains Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:.16em}
+
+.hl-orange{color:var(--orange)}.hl-yellow{color:var(--yellow)}.hl-teal{color:var(--teal)}
+</style>
+</head>
+<body>
+
+<!-- topbar -->
+<nav class="topbar">
+  <div class="brand">STACKED<span class="dot">.</span></div>
+  <div class="toc">
+    <a href="#idea">idea</a>
+    <a href="#how">how</a>
+    <a href="#cut">cut</a>
+    <a href="#stack">stack</a>
+    <a href="#roadmap">roadmap</a>
+    <a href="#sources">sources</a>
+    <a href="#interface">ui</a>
+    <a href="#next">next</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg">
+    <svg viewBox="0 0 1600 600" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="heroFill" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0%" stop-color="#ff5f1f" stop-opacity="0.65"/>
+          <stop offset="100%" stop-color="#ff5f1f" stop-opacity="0"/>
+        </linearGradient>
+      </defs>
+      <path d="M 0,500 L 80,490 L 160,440 L 240,300 L 320,400 L 380,420 L 460,350 L 540,120 L 640,300 L 720,360 L 800,400 L 880,330 L 960,40 L 1040,290 L 1120,380 L 1200,360 L 1260,260 L 1340,360 L 1420,420 L 1500,470 L 1600,490 L 1600,600 L 0,600 Z" fill="url(#heroFill)"/>
+      <path d="M 0,500 L 80,490 L 160,440 L 240,300 L 320,400 L 380,420 L 460,350 L 540,120 L 640,300 L 720,360 L 800,400 L 880,330 L 960,40 L 1040,290 L 1120,380 L 1200,360 L 1260,260 L 1340,360 L 1420,420 L 1500,470 L 1600,490" fill="none" stroke="#fff200" stroke-width="2"/>
+      <circle cx="540" cy="120" r="5" fill="#fff200"/>
+      <circle cx="960" cy="40" r="5" fill="#fff200"/>
+      <circle cx="1260" cy="260" r="5" fill="#fff200"/>
+    </svg>
+  </div>
+  <div class="hero-mask"></div>
+  <div class="hero-content container">
+    <span class="hero-badge">working title · name tbd</span>
+    <h1>STACKED</h1>
+    <p class="hero-tagline">Splice climbs together. Cut them out of long rides.<br>Load straight into Rouvy. Suffer in sequence.</p>
+    <div class="hero-cta">
+      <a href="#how" class="btn primary">How it works ↓</a>
+      <a href="#roadmap" class="btn">Roadmap</a>
+    </div>
+  </div>
+  <div class="scroll-hint">scroll</div>
+</section>
+
+<!-- IDEA -->
+<section id="idea">
+  <div class="container">
+    <div class="eyebrow">// the idea</div>
+    <h2 class="section-title">Cherry-pick climbs.<br>Stitch them into one ride.</h2>
+    <p class="section-intro">
+      Indoor cycling platforms like <span class="hl-orange">Rouvy</span> accept GPX files as routes. The climbs you actually want to ride are scattered across maps — one in Yorkshire, one in Wales, one in the Lakes. <strong>Stacked</strong> lets you collect those climbs, splice them into one synthetic route, preview it on a map and elevation profile, and export a GPX that Rouvy will treat as a single ride. It also works in reverse — import a long ride, drag-cut the climbs you want out of it, save each as a standalone file. No backend. All in your browser.
+    </p>
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-label">deployment</div>
+        <div class="stat-value">100%</div>
+        <div class="stat-sub">client-side</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">climbs per ride</div>
+        <div class="stat-value">∞</div>
+        <div class="stat-sub">reorderable</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">visualisation</div>
+        <div class="stat-value">live</div>
+        <div class="stat-sub">map + profile</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">target</div>
+        <div class="stat-value">Rouvy</div>
+        <div class="stat-sub">GPX 1.1</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW -->
+<section id="how">
+  <div class="container">
+    <div class="eyebrow">// how it works</div>
+    <h2 class="section-title">Three operations.<br>Done in your browser.</h2>
+    <p class="section-intro">
+      The whole engine is three transformations applied in order: shift coordinates to align endpoints, shift elevations to match altitudes, then optionally insert recovery segments between climbs.
+    </p>
+
+    <!-- STITCH -->
+    <div class="step">
+      <div class="step-text">
+        <div class="step-num">01 — STITCH</div>
+        <h3 class="step-title">Translate to align endpoints</h3>
+        <p class="step-desc">
+          Each climb's coordinates are translated (shifted on the lat/lon plane — no rotation, no scaling, no warping) so hill B starts exactly where hill A ended. Distance, gradient, and the shape of every metre of road are preserved perfectly.
+        </p>
+        <p class="step-desc">
+          The result is <em>geographically synthetic</em> — your stitched route on a real-world map looks like a squiggle wherever you anchor it — but mathematically continuous for Rouvy's distance and gradient maths.
+        </p>
+      </div>
+      <div class="step-figure">
+        <svg viewBox="0 0 480 360" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <pattern id="grid1" width="24" height="24" patternUnits="userSpaceOnUse">
+              <path d="M 24 0 L 0 0 0 24" fill="none" stroke="#2a2a2e" stroke-width="0.5"/>
+            </pattern>
+            <linearGradient id="hg1" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#ff5f1f" stop-opacity="0.7"/>
+              <stop offset="100%" stop-color="#ff5f1f" stop-opacity="0.05"/>
+            </linearGradient>
+          </defs>
+          <rect width="480" height="170" fill="url(#grid1)"/>
+          <text x="16" y="22" font-family="JetBrains Mono" font-size="10" fill="#75757b" letter-spacing="2">BEFORE — 3 LOCATIONS</text>
+          <g transform="translate(40, 60)">
+            <path d="M 0,80 Q 30,20 60,80 Z" fill="url(#hg1)" stroke="#fff200" stroke-width="1.5"/>
+            <circle cx="0" cy="80" r="3" fill="#fff200"/>
+            <circle cx="60" cy="80" r="3" fill="#fff200"/>
+            <text x="30" y="100" font-family="JetBrains Mono" font-size="8" fill="#75757b" text-anchor="middle">Yorkshire</text>
+          </g>
+          <g transform="translate(190, 50)">
+            <path d="M 0,90 Q 35,10 70,90 Z" fill="url(#hg1)" stroke="#fff200" stroke-width="1.5"/>
+            <circle cx="0" cy="90" r="3" fill="#fff200"/>
+            <circle cx="70" cy="90" r="3" fill="#fff200"/>
+            <text x="35" y="110" font-family="JetBrains Mono" font-size="8" fill="#75757b" text-anchor="middle">Wales</text>
+          </g>
+          <g transform="translate(360, 70)">
+            <path d="M 0,70 Q 40,0 80,70 Z" fill="url(#hg1)" stroke="#fff200" stroke-width="1.5"/>
+            <circle cx="0" cy="70" r="3" fill="#fff200"/>
+            <circle cx="80" cy="70" r="3" fill="#fff200"/>
+            <text x="40" y="90" font-family="JetBrains Mono" font-size="8" fill="#75757b" text-anchor="middle">Lakes</text>
+          </g>
+          <line x1="20" y1="200" x2="460" y2="200" stroke="#3a3a40" stroke-width="1" stroke-dasharray="3,4"/>
+          <text x="240" y="195" font-family="JetBrains Mono" font-size="9" fill="#ff5f1f" text-anchor="middle" letter-spacing="2">↓ TRANSLATE ↓</text>
+          <text x="16" y="232" font-family="JetBrains Mono" font-size="10" fill="#ff5f1f" letter-spacing="2">AFTER — ENDPOINTS ALIGNED</text>
+          <g transform="translate(110, 240)">
+            <path d="M 0,90 Q 30,30 60,90 Q 95,10 130,90 Q 170,0 210,90 Z" fill="url(#hg1)" stroke="#fff200" stroke-width="2"/>
+            <circle cx="0" cy="90" r="4" fill="#ff5f1f" stroke="#0a0a0c" stroke-width="2"/>
+            <circle cx="60" cy="90" r="4" fill="#ff5f1f" stroke="#0a0a0c" stroke-width="2"/>
+            <circle cx="130" cy="90" r="4" fill="#ff5f1f" stroke="#0a0a0c" stroke-width="2"/>
+            <circle cx="210" cy="90" r="4" fill="#ff5f1f" stroke="#0a0a0c" stroke-width="2"/>
+            <text x="105" y="115" font-family="JetBrains Mono" font-size="8" fill="#75757b" text-anchor="middle">one continuous track</text>
+          </g>
+        </svg>
+      </div>
+    </div>
+
+    <!-- NORMALISE -->
+    <div class="step reverse">
+      <div class="step-text">
+        <div class="step-num">02 — NORMALISE</div>
+        <h3 class="step-title">Shift elevations to meet</h3>
+        <p class="step-desc">
+          If hill A ends at <span class="mono hl-yellow">200m</span> and hill B's GPX starts at <span class="mono hl-yellow">400m</span>, hill B's entire elevation profile is translated <em>down by 200m</em>. Every relative rise, every gradient percentage, every metre of total ascent is preserved — only the absolute altitude baseline shifts.
+        </p>
+        <p class="step-desc">
+          Your trainer cares about <strong>gradient</strong>, not altitude. Translating elevations is lossless for training, costs nothing, and decouples altitude continuity from your workout design.
+        </p>
+      </div>
+      <div class="step-figure">
+        <svg viewBox="0 0 480 360" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="hg2a" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#ff5f1f" stop-opacity="0.7"/>
+              <stop offset="100%" stop-color="#ff5f1f" stop-opacity="0.05"/>
+            </linearGradient>
+            <linearGradient id="hg2b" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#5eead4" stop-opacity="0.7"/>
+              <stop offset="100%" stop-color="#5eead4" stop-opacity="0.05"/>
+            </linearGradient>
+          </defs>
+          <text x="16" y="22" font-family="JetBrains Mono" font-size="10" fill="#75757b" letter-spacing="2">BEFORE — MISMATCHED</text>
+          <line x1="20" y1="150" x2="460" y2="150" stroke="#2a2a2e" stroke-width="1" stroke-dasharray="2,3"/>
+          <text x="22" y="146" font-family="JetBrains Mono" font-size="8" fill="#75757b">sea level</text>
+          <path d="M 50,120 Q 80,60 110,100 L 110,150 L 50,150 Z" fill="url(#hg2a)" stroke="#fff200" stroke-width="1.5"/>
+          <circle cx="110" cy="100" r="4" fill="#fff200"/>
+          <text x="118" y="104" font-family="JetBrains Mono" font-size="9" fill="#fff200">ends 200m</text>
+          <line x1="110" y1="100" x2="240" y2="60" stroke="#ff4d8d" stroke-width="1" stroke-dasharray="3,3"/>
+          <text x="175" y="75" font-family="JetBrains Mono" font-size="8" fill="#ff4d8d" text-anchor="middle">+200m gap</text>
+          <path d="M 240,60 Q 280,0 320,40 Q 360,80 400,150 L 240,150 Z" fill="url(#hg2b)" stroke="#5eead4" stroke-width="1.5"/>
+          <circle cx="240" cy="60" r="4" fill="#5eead4"/>
+          <text x="248" y="55" font-family="JetBrains Mono" font-size="9" fill="#5eead4">starts 400m</text>
+          <line x1="20" y1="180" x2="460" y2="180" stroke="#3a3a40" stroke-width="1" stroke-dasharray="3,4"/>
+          <text x="240" y="175" font-family="JetBrains Mono" font-size="9" fill="#ff5f1f" text-anchor="middle" letter-spacing="2">↓ SHIFT HILL B DOWN 200M ↓</text>
+          <text x="16" y="212" font-family="JetBrains Mono" font-size="10" fill="#ff5f1f" letter-spacing="2">AFTER — ALIGNED</text>
+          <line x1="20" y1="340" x2="460" y2="340" stroke="#2a2a2e" stroke-width="1" stroke-dasharray="2,3"/>
+          <path d="M 50,310 Q 80,250 110,290 L 110,340 L 50,340 Z" fill="url(#hg2a)" stroke="#fff200" stroke-width="1.5"/>
+          <circle cx="110" cy="290" r="4" fill="#fff200"/>
+          <path d="M 240,290 Q 280,230 320,270 Q 360,310 400,340 L 240,340 Z" fill="url(#hg2b)" stroke="#5eead4" stroke-width="1.5"/>
+          <circle cx="240" cy="290" r="4" fill="#5eead4"/>
+          <line x1="110" y1="290" x2="240" y2="290" stroke="#fff200" stroke-width="1.5" stroke-dasharray="3,3"/>
+          <text x="175" y="282" font-family="JetBrains Mono" font-size="8" fill="#75757b" text-anchor="middle">same altitude</text>
+        </svg>
+      </div>
+    </div>
+
+    <!-- BRIDGE -->
+    <div class="step">
+      <div class="step-text">
+        <div class="step-num">03 — BRIDGE</div>
+        <h3 class="step-title">Optional recovery segments</h3>
+        <p class="step-desc">
+          Once climbs are stitched and normalised, the junctions are seamless. Then you decide: should there be space between hill A and hill B? Drop in a <span class="hl-teal">bridge segment</span> — flat road, a descent into a valley before the next climb, or a false-flat ramp. Configure by gradient (length derives) or by length (gradient derives).
+        </p>
+        <p class="step-desc">
+          Bridges are drawn in <span class="hl-teal">teal</span> on the map and chart, so you can always tell engineered bridge from real GPX data.
+        </p>
+      </div>
+      <div class="step-figure">
+        <svg viewBox="0 0 480 360" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="hg3" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#ff5f1f" stop-opacity="0.7"/>
+              <stop offset="100%" stop-color="#ff5f1f" stop-opacity="0.05"/>
+            </linearGradient>
+          </defs>
+          <g transform="translate(8, 20)">
+            <text x="75" y="14" font-family="JetBrains Mono" font-size="10" fill="#5eead4" text-anchor="middle" letter-spacing="2">FLAT</text>
+            <path d="M 10,30 Q 30,30 50,80 L 50,100 L 10,100 Z" fill="url(#hg3)" stroke="#fff200" stroke-width="1.5"/>
+            <line x1="50" y1="80" x2="100" y2="80" stroke="#5eead4" stroke-width="2" stroke-dasharray="3,3"/>
+            <path d="M 100,80 Q 120,30 140,30 L 140,100 L 100,100 Z" fill="url(#hg3)" stroke="#fff200" stroke-width="1.5"/>
+            <text x="75" y="120" font-family="JetBrains Mono" font-size="8" fill="#75757b" text-anchor="middle">no elev change</text>
+            <text x="75" y="132" font-family="JetBrains Mono" font-size="8" fill="#75757b" text-anchor="middle">0% gradient</text>
+          </g>
+          <g transform="translate(168, 20)">
+            <text x="75" y="14" font-family="JetBrains Mono" font-size="10" fill="#5eead4" text-anchor="middle" letter-spacing="2">VALLEY</text>
+            <path d="M 10,30 Q 30,30 50,80 L 50,100 L 10,100 Z" fill="url(#hg3)" stroke="#fff200" stroke-width="1.5"/>
+            <path d="M 50,80 L 75,98 L 100,80" fill="none" stroke="#5eead4" stroke-width="2" stroke-dasharray="3,3"/>
+            <path d="M 100,80 Q 120,30 140,30 L 140,100 L 100,100 Z" fill="url(#hg3)" stroke="#fff200" stroke-width="1.5"/>
+            <text x="75" y="120" font-family="JetBrains Mono" font-size="8" fill="#75757b" text-anchor="middle">recovery descent</text>
+            <text x="75" y="132" font-family="JetBrains Mono" font-size="8" fill="#75757b" text-anchor="middle">−4% then back up</text>
+          </g>
+          <g transform="translate(328, 20)">
+            <text x="75" y="14" font-family="JetBrains Mono" font-size="10" fill="#5eead4" text-anchor="middle" letter-spacing="2">FALSE FLAT</text>
+            <path d="M 10,30 Q 30,30 50,80 L 50,100 L 10,100 Z" fill="url(#hg3)" stroke="#fff200" stroke-width="1.5"/>
+            <line x1="50" y1="80" x2="100" y2="65" stroke="#5eead4" stroke-width="2" stroke-dasharray="3,3"/>
+            <path d="M 100,65 Q 120,15 140,15 L 140,100 L 100,100 Z" fill="url(#hg3)" stroke="#fff200" stroke-width="1.5"/>
+            <text x="75" y="120" font-family="JetBrains Mono" font-size="8" fill="#75757b" text-anchor="middle">false flat / ramp</text>
+            <text x="75" y="132" font-family="JetBrains Mono" font-size="8" fill="#75757b" text-anchor="middle">+2% no recovery</text>
+          </g>
+          <g transform="translate(60, 230)">
+            <text x="0" y="0" font-family="JetBrains Mono" font-size="11" fill="#75757b" letter-spacing="2">LEGEND</text>
+            <line x1="0" y1="22" x2="30" y2="22" stroke="#fff200" stroke-width="2"/>
+            <text x="40" y="26" font-family="JetBrains Mono" font-size="10" fill="#b8b8bd">real GPX data</text>
+            <line x1="200" y1="22" x2="230" y2="22" stroke="#5eead4" stroke-width="2" stroke-dasharray="3,3"/>
+            <text x="240" y="26" font-family="JetBrains Mono" font-size="10" fill="#b8b8bd">engineered bridge</text>
+            <text x="0" y="60" font-family="JetBrains Mono" font-size="10" fill="#75757b">configure each bridge by gradient or by length —</text>
+            <text x="0" y="76" font-family="JetBrains Mono" font-size="10" fill="#75757b">the engine derives whatever you don't specify.</text>
+          </g>
+        </svg>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CUT -->
+<section id="cut">
+  <div class="container">
+    <div class="eyebrow">// the other half</div>
+    <h2 class="section-title">Cut climbs out of long rides.</h2>
+    <p class="section-intro">
+      Half your GPX files come from real rides — a 60km Saturday loop that happens to contain two climbs worth keeping. Stacked works in reverse too: import a long ride, drag handles to mark slices, save each as a standalone GPX. Those extracted files become ingredients you feed back into the stitcher.
+    </p>
+    <div class="step reverse">
+      <div class="step-text">
+        <div class="step-num">CUT MODE</div>
+        <h3 class="step-title">Slice → save → re-use</h3>
+        <p class="step-desc">
+          Drop a long GPX in. The full elevation profile renders end-to-end. Drag a selection across the chart — or pick start/end markers on the map — to highlight any segment. Add more selections from the same file. Each can be named and previewed independently.
+        </p>
+        <p class="step-desc">
+          Save and each slice exports as its own clean GPX with original metadata preserved. The output is identical in shape to anything you'd download from Climbfinder — ready to drag straight back into the stitcher on the other tab.
+        </p>
+      </div>
+      <div class="step-figure">
+        <svg viewBox="0 0 480 360" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="hg4" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#ff5f1f" stop-opacity="0.7"/>
+              <stop offset="100%" stop-color="#ff5f1f" stop-opacity="0.05"/>
+            </linearGradient>
+          </defs>
+          <text x="16" y="22" font-family="JetBrains Mono" font-size="10" fill="#75757b" letter-spacing="2">IMPORTED — full ride</text>
+          <path d="M 20,150 L 50,145 L 80,95 L 110,135 L 140,150 L 170,120 L 200,150 L 230,150 L 260,75 L 300,140 L 330,150 L 370,55 L 400,120 L 430,145 L 460,150 L 460,165 L 20,165 Z" fill="url(#hg4)" stroke="#fff200" stroke-width="1.5"/>
+          <rect x="65" y="65" width="55" height="100" fill="rgba(255,95,31,0.2)" stroke="#ff5f1f" stroke-width="1.5" stroke-dasharray="3,2"/>
+          <circle cx="65" cy="50" r="4" fill="#ff5f1f"/>
+          <circle cx="120" cy="50" r="4" fill="#ff5f1f"/>
+          <text x="92" y="45" font-family="JetBrains Mono" font-size="9" fill="#ff5f1f" text-anchor="middle">CLIMB 1</text>
+          <rect x="350" y="40" width="62" height="125" fill="rgba(255,95,31,0.2)" stroke="#ff5f1f" stroke-width="1.5" stroke-dasharray="3,2"/>
+          <circle cx="350" cy="25" r="4" fill="#ff5f1f"/>
+          <circle cx="412" cy="25" r="4" fill="#ff5f1f"/>
+          <text x="381" y="20" font-family="JetBrains Mono" font-size="9" fill="#ff5f1f" text-anchor="middle">CLIMB 2</text>
+          <line x1="20" y1="195" x2="460" y2="195" stroke="#3a3a40" stroke-width="1" stroke-dasharray="3,4"/>
+          <text x="240" y="190" font-family="JetBrains Mono" font-size="9" fill="#ff5f1f" text-anchor="middle" letter-spacing="2">↓ SAVE EACH AS GPX ↓</text>
+          <g transform="translate(40, 215)">
+            <rect width="180" height="130" rx="8" fill="#0e0e11" stroke="#2a2a2e"/>
+            <text x="14" y="22" font-family="JetBrains Mono" font-size="9" fill="#fff200" letter-spacing="1">CLIMB-1.GPX</text>
+            <path d="M 14,100 L 40,90 L 70,55 L 100,50 L 140,100 L 166,100 L 166,114 L 14,114 Z" fill="url(#hg4)" stroke="#fff200" stroke-width="1.5"/>
+            <text x="90" y="124" font-family="JetBrains Mono" font-size="8" fill="#75757b" text-anchor="middle">1.8km · +112m · 6.2%</text>
+          </g>
+          <g transform="translate(260, 215)">
+            <rect width="180" height="130" rx="8" fill="#0e0e11" stroke="#2a2a2e"/>
+            <text x="14" y="22" font-family="JetBrains Mono" font-size="9" fill="#fff200" letter-spacing="1">CLIMB-2.GPX</text>
+            <path d="M 14,100 L 40,80 L 80,30 L 110,40 L 140,90 L 166,100 L 166,114 L 14,114 Z" fill="url(#hg4)" stroke="#fff200" stroke-width="1.5"/>
+            <text x="90" y="124" font-family="JetBrains Mono" font-size="8" fill="#75757b" text-anchor="middle">2.4km · +204m · 8.5%</text>
+          </g>
+        </svg>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- STACK -->
+<section id="stack">
+  <div class="container">
+    <div class="eyebrow">// the stack</div>
+    <h2 class="section-title">Boringly modern.<br>No backend required.</h2>
+    <p class="section-intro">
+      GPX parsing, splicing, map rendering and chart drawing are all cheap. Everything runs in your browser — drop files in, get a file out, no servers to maintain, no privacy surface, deploys to anything that hosts static HTML.
+    </p>
+    <div class="stack-grid">
+      <div class="stack-card">
+        <div class="stack-card-label">frontend</div>
+        <div class="stack-card-title">React + Vite</div>
+        <div class="stack-card-desc">Quick to set up, hot-reload dev loop, builds to static files. TypeScript throughout for ergonomics.</div>
+        <div class="tech-row"><span class="tag">React</span><span class="tag">Vite</span><span class="tag">TypeScript</span></div>
+      </div>
+      <div class="stack-card">
+        <div class="stack-card-label">map</div>
+        <div class="stack-card-title">Leaflet + OSM</div>
+        <div class="stack-card-desc">Free tiles, lightweight, easy to draw polylines and markers. Swap to MapLibre later if we want vector tiles.</div>
+        <div class="tech-row"><span class="tag">Leaflet</span><span class="tag">OpenStreetMap</span></div>
+      </div>
+      <div class="stack-card">
+        <div class="stack-card-label">elevation chart</div>
+        <div class="stack-card-title">uPlot</div>
+        <div class="stack-card-desc">Tiny (40KB), screaming fast, handles big point clouds without choking. Chart.js as a fallback for fancier styling.</div>
+        <div class="tech-row"><span class="tag">uPlot</span></div>
+      </div>
+      <div class="stack-card">
+        <div class="stack-card-label">gpx i/o</div>
+        <div class="stack-card-title">Custom parser</div>
+        <div class="stack-card-desc">GPX 1.1 is small — a 40-line parser handles every case we need. Validation against Rouvy quirks lives in our code.</div>
+        <div class="tech-row"><span class="tag">DOMParser</span><span class="tag">XML</span></div>
+      </div>
+      <div class="stack-card">
+        <div class="stack-card-label">deploy</div>
+        <div class="stack-card-title">Static host</div>
+        <div class="stack-card-desc">Build outputs a folder. Drop on Cloudflare Pages, Netlify, GitHub Pages, or your own server. No DB, no env vars, no surprise costs.</div>
+        <div class="tech-row"><span class="tag">Cloudflare Pages</span><span class="tag">or self-host</span></div>
+      </div>
+      <div class="stack-card">
+        <div class="stack-card-label">optional later</div>
+        <div class="stack-card-title">Routing API</div>
+        <div class="stack-card-desc">If you ever want bridges to follow real roads instead of straight lines, plug in OSRM or GraphHopper. Optional, not in the MVP.</div>
+        <div class="tech-row"><span class="tag">OSRM</span><span class="tag">GraphHopper</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ROADMAP -->
+<section id="roadmap">
+  <div class="container">
+    <div class="eyebrow">// the roadmap</div>
+    <h2 class="section-title">Validate first.<br>Then build forward.</h2>
+    <p class="section-intro">
+      The riskiest unknown is whether Rouvy accepts geographically-synthetic routes at all. Step 00 is a 30-minute spike to de-risk the whole project before we write a line of UI code.
+    </p>
+    <div class="timeline">
+      <div class="milestone">
+        <div class="milestone-num">00 · spike</div>
+        <div class="milestone-title">Hand-craft a stitched GPX, test in Rouvy</div>
+        <div class="milestone-desc">Take two real climb GPX files. Manually edit one so its coordinates continue from the other. Load into Rouvy. Does the trainer drive resistance correctly through the whole ride? Does the map render? This answers the only critical question before we build anything.</div>
+        <div class="milestone-meta"><span>~30 min</span><span>no code yet</span></div>
+      </div>
+      <div class="milestone">
+        <div class="milestone-num">01 · mvp</div>
+        <div class="milestone-title">Drag · drop · stitch · download</div>
+        <div class="milestone-desc">Drop multiple GPX files in. Reorder them. The engine stitches and normalises in real time. Map shows the merged route, chart shows the elevation profile. Download button gives you a valid GPX 1.1 file.</div>
+        <div class="milestone-meta"><span>react app skeleton</span><span>parser + writer</span><span>basic map + chart</span></div>
+      </div>
+      <div class="milestone">
+        <div class="milestone-num">02 · cut</div>
+        <div class="milestone-title">Extract slices from imported GPX files</div>
+        <div class="milestone-desc">Second mode in the app: drop a long ride in, drag selection handles across the elevation chart or pick start/end on the map, save each highlighted slice as its own GPX. Reuses the same parser, map and chart code as the stitcher — minimal new surface area.</div>
+        <div class="milestone-meta"><span>selection handles</span><span>multi-slice export</span><span>shared preview</span></div>
+      </div>
+      <div class="milestone">
+        <div class="milestone-num">03 · bridges</div>
+        <div class="milestone-title">Recovery segments between climbs</div>
+        <div class="milestone-desc">Bridge editor in the climb list — type (flat/valley/ramp), gradient and length controls, one deriving from the other. Bridges rendered in teal on map and chart. Defaults configurable globally.</div>
+        <div class="milestone-meta"><span>bridge model</span><span>per-junction UI</span></div>
+      </div>
+      <div class="milestone">
+        <div class="milestone-num">04 · polish</div>
+        <div class="milestone-title">Trimming, presets, saved courses</div>
+        <div class="milestone-desc">Per-file start/end trimming via drag handles on the elevation chart. Save a course to localStorage so you can iterate over multiple sessions. Presets for common bridge configs ("short rest", "long valley"). Stats panel: distance, elevation gain, estimated ride time.</div>
+        <div class="milestone-meta"><span>trim handles</span><span>localStorage</span><span>stats</span></div>
+      </div>
+      <div class="milestone">
+        <div class="milestone-num">05 · stretch</div>
+        <div class="milestone-title">Real-road bridges, climb library</div>
+        <div class="milestone-desc">Optional: routed bridges using OSRM (bridges follow real cycling roads instead of straight lines). A local library of climbs you've uploaded, with thumbnails and stats. Maybe a discovery view: import directly from a Strava segment URL.</div>
+        <div class="milestone-meta"><span>OSRM</span><span>climb library</span><span>strava import</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SOURCES -->
+<section id="sources">
+  <div class="container">
+    <div class="eyebrow">// where to get climbs</div>
+    <h2 class="section-title">GPX files are everywhere.<br>You just need to know where to look.</h2>
+    <p class="section-intro">
+      For Stacked to be useful you need a steady supply of climb GPX files. Here are the best sources, ranked roughly by friction and quality. Most are free or have a free tier that's plenty for personal use.
+    </p>
+    <div class="sources-grid">
+      <div class="source">
+        <div class="source-head"><div class="source-name">Climbfinder</div><span class="source-tag free">free</span></div>
+        <div class="source-domain">climbfinder.com</div>
+        <div class="source-desc">Catalogue of named climbs across Europe with GPX downloads. Best first stop for known European cols — entries already isolate just the climb, no chaff.</div>
+      </div>
+      <div class="source">
+        <div class="source-head"><div class="source-name">cyclingcols</div><span class="source-tag free">free</span></div>
+        <div class="source-domain">cyclingcols.com</div>
+        <div class="source-desc">Deep database of European cols with elevation profiles and GPX downloads. Especially strong on Alpine and Pyrenean climbs.</div>
+      </div>
+      <div class="source">
+        <div class="source-head"><div class="source-name">Strava</div><span class="source-tag freemium">freemium</span></div>
+        <div class="source-domain">strava.com</div>
+        <div class="source-desc">Any public activity or route exports as GPX. Segments need a Premium subscription to download cleanly. The richest source if you have a sub.</div>
+      </div>
+      <div class="source">
+        <div class="source-head"><div class="source-name">Ride With GPS</div><span class="source-tag freemium">freemium</span></div>
+        <div class="source-domain">ridewithgps.com</div>
+        <div class="source-desc">Huge library of user-uploaded routes. GPX export on the free tier. Good for British and US climbs that don't appear on Climbfinder.</div>
+      </div>
+      <div class="source">
+        <div class="source-head"><div class="source-name">Komoot</div><span class="source-tag freemium">freemium</span></div>
+        <div class="source-domain">komoot.com</div>
+        <div class="source-desc">Route planner with strong UK and EU coverage. GPX export needs a one-time region purchase or premium account.</div>
+      </div>
+      <div class="source">
+        <div class="source-head"><div class="source-name">PJAMM Cycling</div><span class="source-tag freemium">freemium</span></div>
+        <div class="source-domain">pjammcycling.com</div>
+        <div class="source-desc">Hyper-detailed climb database — gradient broken down per kilometre, GPX exports for paid members. Strong on iconic and obscure climbs worldwide.</div>
+      </div>
+      <div class="source">
+        <div class="source-head"><div class="source-name">Garmin Connect</div><span class="source-tag free">free</span></div>
+        <div class="source-domain">connect.garmin.com</div>
+        <div class="source-desc">Your own activities and routes export cleanly to GPX. The best source if a climb you want to stitch is one you've actually ridden.</div>
+      </div>
+      <div class="source">
+        <div class="source-head"><div class="source-name">OpenStreetMap + SRTM</div><span class="source-tag free">free</span></div>
+        <div class="source-domain">openstreetmap.org · opentopodata.org</div>
+        <div class="source-desc">Build your own GPX from any road on OSM. Enrich with elevation from SRTM via the free OpenTopoData API. Useful for fixing files with broken or missing elevation.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- INTERFACE -->
+<section id="interface">
+  <div class="container">
+    <div class="eyebrow">// the interface</div>
+    <h2 class="section-title">Drag, drop, drag, drop, download.</h2>
+    <p class="section-intro">
+      Sketch of the planned UI. Left rail is the order of climbs (drag to reorder, click to edit per-file settings, junction strip between each pair for the bridge config). Right is a live preview — map on top, elevation chart below.
+    </p>
+    <div class="wireframe-wrap">
+      <svg viewBox="0 0 1200 700" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <pattern id="mapGrid" width="40" height="40" patternUnits="userSpaceOnUse">
+            <rect width="40" height="40" fill="#0e0e11"/>
+            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1d1d22" stroke-width="0.5"/>
+          </pattern>
+          <linearGradient id="profileFill" x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0%" stop-color="#ff5f1f" stop-opacity="0.55"/>
+            <stop offset="100%" stop-color="#ff5f1f" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+
+        <rect x="0" y="0" width="1200" height="700" rx="14" fill="#111114" stroke="#2a2a2e"/>
+        <rect x="0" y="0" width="1200" height="56" fill="#16161a"/>
+        <line x1="0" y1="56" x2="1200" y2="56" stroke="#2a2a2e"/>
+        <text x="24" y="34" font-family="Space Grotesk" font-size="16" font-weight="700" fill="#f5f5f7">STACKED<tspan fill="#ff5f1f">.</tspan></text>
+        <rect x="1010" y="14" width="80" height="28" rx="14" fill="#1d1d22" stroke="#2a2a2e"/>
+        <text x="1050" y="32" font-family="JetBrains Mono" font-size="10" fill="#b8b8bd" text-anchor="middle">RESET</text>
+        <rect x="1098" y="14" width="84" height="28" rx="14" fill="#ff5f1f"/>
+        <text x="1140" y="32" font-family="JetBrains Mono" font-size="10" fill="#1a0a00" text-anchor="middle" font-weight="700">EXPORT</text>
+
+        <rect x="0" y="56" width="380" height="644" fill="#0e0e11"/>
+        <line x1="380" y1="56" x2="380" y2="700" stroke="#2a2a2e"/>
+
+        <rect x="20" y="76" width="340" height="80" rx="10" fill="#16161a" stroke="#ff5f1f" stroke-width="1.5" stroke-dasharray="4,4"/>
+        <text x="190" y="112" font-family="JetBrains Mono" font-size="10" fill="#ff5f1f" text-anchor="middle" letter-spacing="2">+ DROP GPX FILES</text>
+        <text x="190" y="132" font-family="JetBrains Mono" font-size="9" fill="#75757b" text-anchor="middle">or click to browse</text>
+
+        <g transform="translate(20, 176)">
+          <rect width="340" height="78" rx="10" fill="#16161a" stroke="#2a2a2e"/>
+          <rect width="4" height="78" rx="2" fill="#fff200"/>
+          <text x="20" y="22" font-family="JetBrains Mono" font-size="9" fill="#75757b" letter-spacing="2">01 · CLIMB</text>
+          <text x="20" y="42" font-family="Space Grotesk" font-size="15" font-weight="700" fill="#f5f5f7">Hardknott Pass</text>
+          <text x="20" y="60" font-family="JetBrains Mono" font-size="10" fill="#b8b8bd">2.1km · +303m · 14.3%</text>
+          <text x="320" y="45" font-family="JetBrains Mono" font-size="14" fill="#75757b">≡</text>
+        </g>
+
+        <g transform="translate(20, 262)">
+          <rect width="340" height="40" rx="8" fill="#0e0e11" stroke="#5eead4" stroke-width="1" stroke-dasharray="3,3"/>
+          <text x="14" y="20" font-family="JetBrains Mono" font-size="9" fill="#5eead4" letter-spacing="1">BRIDGE</text>
+          <text x="14" y="32" font-family="JetBrains Mono" font-size="9" fill="#b8b8bd">valley · −4% · 5.2km</text>
+          <text x="320" y="26" font-family="JetBrains Mono" font-size="11" fill="#5eead4">⚙</text>
+        </g>
+
+        <g transform="translate(20, 310)">
+          <rect width="340" height="78" rx="10" fill="#16161a" stroke="#2a2a2e"/>
+          <rect width="4" height="78" rx="2" fill="#fff200"/>
+          <text x="20" y="22" font-family="JetBrains Mono" font-size="9" fill="#75757b" letter-spacing="2">02 · CLIMB</text>
+          <text x="20" y="42" font-family="Space Grotesk" font-size="15" font-weight="700" fill="#f5f5f7">Bwlch y Groes</text>
+          <text x="20" y="60" font-family="JetBrains Mono" font-size="10" fill="#b8b8bd">5.4km · +401m · 8.1%</text>
+          <text x="320" y="45" font-family="JetBrains Mono" font-size="14" fill="#75757b">≡</text>
+        </g>
+
+        <g transform="translate(20, 396)">
+          <rect width="340" height="40" rx="8" fill="#0e0e11" stroke="#5eead4" stroke-width="1" stroke-dasharray="3,3"/>
+          <text x="14" y="20" font-family="JetBrains Mono" font-size="9" fill="#5eead4" letter-spacing="1">BRIDGE</text>
+          <text x="14" y="32" font-family="JetBrains Mono" font-size="9" fill="#b8b8bd">flat · 0% · 1.0km</text>
+          <text x="320" y="26" font-family="JetBrains Mono" font-size="11" fill="#5eead4">⚙</text>
+        </g>
+
+        <g transform="translate(20, 444)">
+          <rect width="340" height="78" rx="10" fill="#16161a" stroke="#2a2a2e"/>
+          <rect width="4" height="78" rx="2" fill="#fff200"/>
+          <text x="20" y="22" font-family="JetBrains Mono" font-size="9" fill="#75757b" letter-spacing="2">03 · CLIMB</text>
+          <text x="20" y="42" font-family="Space Grotesk" font-size="15" font-weight="700" fill="#f5f5f7">Honister Pass</text>
+          <text x="20" y="60" font-family="JetBrains Mono" font-size="10" fill="#b8b8bd">2.5km · +311m · 12.6%</text>
+          <text x="320" y="45" font-family="JetBrains Mono" font-size="14" fill="#75757b">≡</text>
+        </g>
+
+        <g transform="translate(20, 556)">
+          <rect width="340" height="124" rx="10" fill="#16161a" stroke="#2a2a2e"/>
+          <text x="16" y="22" font-family="JetBrains Mono" font-size="9" fill="#ff5f1f" letter-spacing="2">TOTALS</text>
+          <text x="16" y="56" font-family="Space Grotesk" font-size="22" font-weight="700" fill="#fff200">16.2 km</text>
+          <text x="16" y="72" font-family="JetBrains Mono" font-size="9" fill="#75757b">distance</text>
+          <text x="180" y="56" font-family="Space Grotesk" font-size="22" font-weight="700" fill="#fff200">+1015 m</text>
+          <text x="180" y="72" font-family="JetBrains Mono" font-size="9" fill="#75757b">elevation gain</text>
+          <text x="16" y="104" font-family="Space Grotesk" font-size="22" font-weight="700" fill="#fff200">~1h 12m</text>
+          <text x="16" y="120" font-family="JetBrains Mono" font-size="9" fill="#75757b">estimated ride time</text>
+          <text x="180" y="104" font-family="Space Grotesk" font-size="22" font-weight="700" fill="#fff200">6.3%</text>
+          <text x="180" y="120" font-family="JetBrains Mono" font-size="9" fill="#75757b">avg gradient</text>
+        </g>
+
+        <rect x="400" y="76" width="780" height="376" rx="10" fill="url(#mapGrid)" stroke="#2a2a2e"/>
+        <path d="M 460,360 Q 540,260 620,300 Q 700,360 780,200 Q 860,140 920,220 Q 1000,300 1080,160 L 1120,140" fill="none" stroke="#fff200" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M 620,300 Q 660,330 700,360" fill="none" stroke="#5eead4" stroke-width="3" stroke-dasharray="6,4" stroke-linecap="round"/>
+        <path d="M 920,220 Q 960,260 1000,300" fill="none" stroke="#5eead4" stroke-width="3" stroke-dasharray="6,4" stroke-linecap="round"/>
+        <circle cx="460" cy="360" r="8" fill="#ff5f1f" stroke="#0a0a0c" stroke-width="3"/>
+        <circle cx="1120" cy="140" r="8" fill="#fff200" stroke="#0a0a0c" stroke-width="3"/>
+        <rect x="420" y="90" width="170" height="26" rx="13" fill="rgba(94,234,212,0.15)" stroke="#5eead4"/>
+        <text x="505" y="107" font-family="JetBrains Mono" font-size="10" fill="#5eead4" text-anchor="middle" letter-spacing="2">SYNTHETIC ROUTE</text>
+
+        <rect x="400" y="472" width="780" height="208" rx="10" fill="#0e0e11" stroke="#2a2a2e"/>
+        <text x="416" y="494" font-family="JetBrains Mono" font-size="9" fill="#ff5f1f" letter-spacing="2">ELEVATION PROFILE</text>
+        <line x1="420" y1="650" x2="1160" y2="650" stroke="#2a2a2e"/>
+        <line x1="420" y1="610" x2="1160" y2="610" stroke="#1d1d22"/>
+        <line x1="420" y1="570" x2="1160" y2="570" stroke="#1d1d22"/>
+        <line x1="420" y1="530" x2="1160" y2="530" stroke="#1d1d22"/>
+        <path d="M 420,650 Q 460,650 520,540 L 540,540 L 540,650 Z" fill="url(#profileFill)"/>
+        <path d="M 420,650 Q 460,650 520,540 L 540,540" fill="none" stroke="#fff200" stroke-width="2"/>
+        <path d="M 540,540 L 600,650" stroke="#5eead4" stroke-width="2" stroke-dasharray="4,4" fill="none"/>
+        <path d="M 600,650 Q 700,650 800,500 L 820,500 L 820,650 L 600,650 Z" fill="url(#profileFill)"/>
+        <path d="M 600,650 Q 700,650 800,500 L 820,500" fill="none" stroke="#fff200" stroke-width="2"/>
+        <path d="M 820,500 L 880,540" stroke="#5eead4" stroke-width="2" stroke-dasharray="4,4" fill="none"/>
+        <path d="M 880,540 Q 980,540 1080,500 L 1120,500 L 1120,650 L 880,650 Z" fill="url(#profileFill)"/>
+        <path d="M 880,540 Q 980,540 1080,500 L 1120,500" fill="none" stroke="#fff200" stroke-width="2"/>
+        <text x="420" y="668" font-family="JetBrains Mono" font-size="9" fill="#75757b">0 km</text>
+        <text x="1130" y="668" font-family="JetBrains Mono" font-size="9" fill="#75757b">16km</text>
+        <text x="412" y="544" font-family="JetBrains Mono" font-size="9" fill="#75757b" text-anchor="end">400m</text>
+        <text x="412" y="654" font-family="JetBrains Mono" font-size="9" fill="#75757b" text-anchor="end">0m</text>
+      </svg>
+    </div>
+
+    <div class="wireframe-notes">
+      <div class="wf-note">
+        <span class="tag">left rail</span>
+        <p>Ordered list of climbs. Drag to reorder. Each climb shows distance, elevation gain, and average gradient. Click to expand for trim handles.</p>
+      </div>
+      <div class="wf-note">
+        <span class="tag">junctions</span>
+        <p>Between every pair of climbs, a bridge segment editor. Click the gear to set type, gradient, and length. Default: no bridge.</p>
+      </div>
+      <div class="wf-note">
+        <span class="tag">map</span>
+        <p>Full stitched route on Leaflet. Real GPX data in yellow, engineered bridges in teal. "SYNTHETIC ROUTE" badge so you don't confuse it with reality.</p>
+      </div>
+      <div class="wf-note">
+        <span class="tag">elevation</span>
+        <p>Complete profile end-to-end. Same colour code: yellow for real, teal for bridge. Hover for distance/gradient at any point.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CONTEXT -->
+<section id="context">
+  <div class="container">
+    <div class="eyebrow">// workflow & context</div>
+    <h2 class="section-title">How we'll build this together.</h2>
+    <p class="section-intro">
+      A small project doesn't need much ceremony. Here's what's worth setting up explicitly so future sessions have the context they need.
+    </p>
+    <div class="two-col">
+      <div class="context-card">
+        <h3>Agents</h3>
+        <p>Start with the built-in agents (general-purpose, Explore, Plan). Don't build custom ones until you feel pain a generic agent isn't handling.</p>
+        <ul>
+          <li><strong>maybe later</strong><em>gpx-domain</em> — for Rouvy quirks, GPX 1.1 schema edge cases, elevation-data backfill logic. Create once we've collected a handful of gotchas worth encoding.</li>
+          <li><strong>maybe later</strong><em>map-ui</em> — Leaflet + chart styling specialist for iteration on the visualisation. Useful if we end up doing a lot of visual polish work.</li>
+        </ul>
+      </div>
+      <div class="context-card">
+        <h3>Memories to seed</h3>
+        <p>Once you say go, a few memory entries are worth writing right away. The rest will accrue naturally as we work.</p>
+        <ul>
+          <li><strong>project</strong>"Stacked" (working title) — GPX stitcher for Rouvy. Default mode: stitched (lat/lon translate) + normalised (elevation translate). Bridges are opt-in workout-design choice.</li>
+          <li><strong>reference</strong>GPX sources: climbfinder, cyclingcols, ridewithgps, Strava (premium). SRTM via OpenTopoData for elevation backfill.</li>
+          <li><strong>feedback</strong><em>(empty)</em> — will accrue as you correct or confirm choices during the build.</li>
+        </ul>
+      </div>
+      <div class="context-card">
+        <h3>Repo conventions</h3>
+        <p>Mirroring the cadence you already use on Going Equipped, adjusted for solo web work.</p>
+        <ul>
+          <li><strong>branching</strong><em>main</em> only for solo MVP. Add a <em>develop</em> branch once we deploy somewhere visible.</li>
+          <li><strong>commits</strong>One per working iteration. Never accumulate. Visual change → commit → next change.</li>
+          <li><strong>tests</strong>Unit tests for the pure engine (parse, translate, normalise, bridge). Skip tests for UI; ship and iterate.</li>
+        </ul>
+      </div>
+      <div class="context-card">
+        <h3>CLAUDE.md (when we start)</h3>
+        <p>A short file at the repo root, ~20 lines max. Seeds every future session with the must-know facts that aren't derivable from code.</p>
+        <ul>
+          <li><strong>terms</strong>stitch (lat/lon translate), normalise (elevation translate), bridge (recovery segment), junction (the bridge slot), cut (extract a slice of an imported GPX as a standalone file), mode (stitch / cut — the two workspaces).</li>
+          <li><strong>rouvy quirks</strong>(filled in after the step-00 spike — whatever we learn about what Rouvy accepts.)</li>
+          <li><strong>defaults</strong>stitched + normalised always on; bridges off until user opts in; map shows "synthetic route" badge in default mode.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- NEXT -->
+<section id="next">
+  <div class="container">
+    <div class="eyebrow">// what's next</div>
+    <div class="next">
+      <h2>Decisions to make.<br>Then we ride.</h2>
+      <p>A handful of open choices before code starts. None of these are permanent — they're starting points we can change as we go.</p>
+      <ol class="checklist">
+        <li>
+          <div class="check-box"></div>
+          <div class="check-num">01</div>
+          <div class="check-text">
+            <strong>Pick a name.</strong>
+            <small>Working title is "Stacked." Folder is currently gps-splicer. Alternatives: Splice, Stitch, Chainlink, Cassette, Crank. Or something else entirely.</small>
+          </div>
+        </li>
+        <li>
+          <div class="check-box"></div>
+          <div class="check-num">02</div>
+          <div class="check-text">
+            <strong>Run the Rouvy spike (step 00).</strong>
+            <small>Before any code, hand-stitch two GPX files, load into Rouvy, confirm it accepts a synthetic route. ~30 minutes that de-risks the whole project.</small>
+          </div>
+        </li>
+        <li>
+          <div class="check-box"></div>
+          <div class="check-num">03</div>
+          <div class="check-text">
+            <strong>Confirm the stack.</strong>
+            <small>React + Vite + Leaflet + uPlot is the proposal. Svelte instead if you prefer; the tool is small enough it doesn't matter much.</small>
+          </div>
+        </li>
+        <li>
+          <div class="check-box"></div>
+          <div class="check-num">04</div>
+          <div class="check-text">
+            <strong>Where to deploy.</strong>
+            <small>Cloudflare Pages, Netlify, GitHub Pages, or your own server — all fine. We can also skip deploy entirely if it's just for you.</small>
+          </div>
+        </li>
+        <li>
+          <div class="check-box"></div>
+          <div class="check-num">05</div>
+          <div class="check-text">
+            <strong>Then I build MVP (step 01).</strong>
+            <small>Drag, drop, stitch, normalise, render, download. Once that works end-to-end, bridges next.</small>
+          </div>
+        </li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<footer>the plan · v0.1 · ready to ride when you are</footer>
+
+</body>
+</html>

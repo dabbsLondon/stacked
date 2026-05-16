@@ -90,6 +90,21 @@ to anything that hosts static HTML.
 - Inline-editable project name in the header with dirty-state indicator
 - **Continue working** prompt on the home page if there's unsaved state
 - Project cards with elevation sparkline, climb count, total km
+- **Duplicate** any saved project under a new name
+
+### Accounts & multi-user (optional)
+- Configure Supabase env vars (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`)
+  to enable sign-in. Without them the app is the same pure-localStorage
+  experience as before.
+- **Magic-link sign-in** (email-only, no passwords).
+- On sign-in, projects sync to Supabase: any local-only projects get pushed
+  up, and any remote projects newer than local get pulled down.
+- Every save / delete writes through to both local cache and remote.
+- **Admin role** (set in DB via `update profiles set role='admin'`) unlocks
+  the **⚙ ADMIN** view on the home page — browse every user's projects
+  with climb + slice breakdowns, and **↓ PULL** any user's climb or cut
+  source straight into your own cut workspace.
+- Full setup guide: [`docs/SUPABASE_SETUP.md`](docs/SUPABASE_SETUP.md).
 
 ---
 
@@ -137,13 +152,14 @@ uploaded as artifacts on each run.
 
 | Status | Files | Tests | Passed | Failed | Skipped |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| 🟢 passing | 6 | 60 | 60 | 0 | 0 |
+| 🟢 passing | 7 | 69 | 69 | 0 | 0 |
 
 | File | Tests |
 | --- | ---: |
 | `src/engine/gpx.test.ts` | 16 |
 | `src/engine/projects.test.ts` | 14 |
 | `src/engine/profile.test.ts` | 10 |
+| `src/engine/supabase.test.ts` | 9 |
 | `src/engine/stitch.test.ts` | 8 |
 | `src/engine/detect.test.ts` | 7 |
 | `src/engine/cut.test.ts` | 5 |

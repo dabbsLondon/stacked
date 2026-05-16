@@ -3,6 +3,8 @@ dist
 .vite
 .DS_Store
 *.local
-.env*
+.env
+.env.local
+.env.*.local
 coverage
 vitest-results.json

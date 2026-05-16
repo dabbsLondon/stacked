@@ -14,6 +14,7 @@
     "ci:summary": "node scripts/ci-summary.mjs"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.105.4",
     "@types/three": "^0.184.1",
     "leaflet": "^1.9.4",
     "react": "^18.3.1",

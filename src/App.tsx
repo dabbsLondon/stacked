@@ -16,6 +16,16 @@ import { ProjectMenu } from './components/ProjectMenu';
 import { HomeView } from './components/HomeView';
 import { BridgeDefaultsPanel } from './components/BridgeDefaults';
 import { ThreeDView } from './components/ThreeDView';
+import { Login } from './components/Login';
+import { AdminView } from './components/AdminView';
+import { useAuth } from './hooks/useAuth';
+import {
+  deleteRemoteProject,
+  listRemoteProjects,
+  saveRemoteProject,
+  signOut,
+  SUPABASE_ENABLED,
+} from './engine/supabase';
 import {
   DEFAULT_BRIDGE,
   deleteProject,
@@ -30,6 +40,8 @@ import {
 } from './engine/projects';
 
 export default function App() {
+  const auth = useAuth();
+
   // Restore working set on first render so a refresh doesn't lose work.
   const initial = useMemo<ProjectSnapshot>(
     () => loadWorking() ?? emptySnapshot(),
@@ -41,7 +53,7 @@ export default function App() {
   // View: 'home' (project picker) or 'editor' (working area).
   const initialHasData =
     initial.stitch.climbs.length > 0 || initial.cut.sources.length > 0;
-  const [view, setView] = useState<'home' | 'editor'>(
+  const [view, setView] = useState<'home' | 'editor' | 'admin'>(
     initialHasData ? 'editor' : 'home',
   );
 
@@ -233,6 +245,7 @@ export default function App() {
       createdAt: Date.now(),
     };
     saveProject(snap);
+    if (auth.kind === 'signed-in') void saveRemoteProject(snap);
     setSavedProjects(listProjects());
     setProjectId(id);
     setProjectName(name);
@@ -245,6 +258,7 @@ export default function App() {
     if (savedProjects.find((p) => p.id === projectId)) {
       const snap: ProjectSnapshot = { ...currentSnapshot, name };
       saveProject(snap);
+      if (auth.kind === 'signed-in') void saveRemoteProject(snap);
       setSavedProjects(listProjects());
       setLastSavedKey(snapshotKey(snap));
     }
@@ -252,6 +266,7 @@ export default function App() {
 
   function handleDelete(id: string) {
     deleteProject(id);
+    if (auth.kind === 'signed-in') void deleteRemoteProject(id);
     setSavedProjects(listProjects());
     if (id === projectId) {
       const fresh = emptySnapshot('untitled');
@@ -265,15 +280,64 @@ export default function App() {
     if (!name || !name.trim()) return;
     const dup = duplicateProject(source, name.trim());
     setSavedProjects(listProjects());
+    if (auth.kind === 'signed-in') {
+      void saveRemoteProject(dup);
+    }
     // Switch to the new project so the user can immediately edit it.
     loadSnapshot(dup);
     setView('editor');
   }
 
+  // One-time reconciliation: on sign-in, pull every remote project into local
+  // storage (newer-wins) and push any local-only projects up. After this the
+  // local copy mirrors the remote and subsequent save/delete just write
+  // through to both.
+  useEffect(() => {
+    if (!SUPABASE_ENABLED) return;
+    if (auth.kind !== 'signed-in') return;
+    let cancelled = false;
+
+    async function reconcile() {
+      const remote = await listRemoteProjects();
+      const local = listProjects();
+      const remoteById = new globalThis.Map<string, typeof remote[number]>(
+        remote.map((r) => [r.id, r]),
+      );
+      const localById = new globalThis.Map<string, ProjectSnapshot>(
+        local.map((p) => [p.id, p]),
+      );
+
+      // Local-only → push up.
+      for (const lp of local) {
+        if (!remoteById.has(lp.id)) {
+          await saveRemoteProject(lp);
+        }
+      }
+      // Remote-only or remote-newer → write down.
+      for (const r of remote) {
+        const lp = localById.get(r.id);
+        const rTs = new Date(r.updated_at).getTime();
+        if (!lp || rTs > lp.updatedAt) {
+          saveProject(r.snapshot);
+        } else if (lp.updatedAt > rTs) {
+          await saveRemoteProject(lp);
+        }
+      }
+      if (cancelled) return;
+      setSavedProjects(listProjects());
+    }
+
+    void reconcile();
+    return () => {
+      cancelled = true;
+    };
+  }, [auth.kind]);
+
   function handleSaveCurrent() {
     // If named (already in saved list), overwrite. Else prompt via SaveAs.
     if (savedProjects.find((p) => p.id === projectId)) {
       saveProject(currentSnapshot);
+      if (auth.kind === 'signed-in') void saveRemoteProject(currentSnapshot);
       setSavedProjects(listProjects());
       setLastSavedKey(currentKey);
     } else {
@@ -531,6 +595,44 @@ export default function App() {
   const headerExportDisabled =
     mode === 'stitch' ? climbs.length === 0 : totalSliceCount === 0;
 
+  // Auth gating — once Supabase is configured, only signed-in users see the
+  // editor. The 'disabled' branch is the pure-localStorage mode.
+  if (auth.kind === 'loading') {
+    return (
+      <div className="app-splash mono">
+        <span className="app-splash-brand">
+          STACKED<span className="brand-dot">.</span>
+        </span>
+        <span className="app-splash-sub">connecting…</span>
+      </div>
+    );
+  }
+  if (auth.kind === 'signed-out') {
+    return <Login />;
+  }
+
+  if (view === 'admin') {
+    return (
+      <AdminView
+        onClose={() => setView('home')}
+        onPullSlice={(climb) => {
+          // Add the pulled climb as a new cut source and switch to cut mode.
+          const id = crypto.randomUUID();
+          const newSource = {
+            id,
+            climb: { ...climb, id },
+            slices: [],
+          };
+          setCutSources((srcs) => [...srcs, newSource]);
+          setActiveSourceId(id);
+          setActiveSliceId(null);
+          setMode('cut');
+          setView('editor');
+        }}
+      />
+    );
+  }
+
   if (view === 'home') {
     return (
       <HomeView
@@ -544,6 +646,11 @@ export default function App() {
         onDelete={handleDelete}
         onDuplicate={handleDuplicate}
         onContinue={() => setView('editor')}
+        profile={auth.kind === 'signed-in' ? auth.profile : null}
+        onSignOut={async () => {
+          await signOut();
+        }}
+        onOpenAdmin={() => setView('admin')}
       />
     );
   }

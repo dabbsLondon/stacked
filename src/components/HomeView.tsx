@@ -1,5 +1,6 @@
 import type { Mode } from '../types';
 import type { ProjectSnapshot } from '../engine/projects';
+import type { Profile } from '../engine/supabase';
 
 interface Props {
   projects: ProjectSnapshot[];
@@ -12,6 +13,9 @@ interface Props {
   onDelete: (id: string) => void;
   onDuplicate: (p: ProjectSnapshot) => void;
   onContinue: () => void;
+  profile: Profile | null;
+  onSignOut: () => void;
+  onOpenAdmin: () => void;
 }
 
 export function HomeView({
@@ -25,6 +29,9 @@ export function HomeView({
   onDelete,
   onDuplicate,
   onContinue,
+  profile,
+  onSignOut,
+  onOpenAdmin,
 }: Props) {
   const sorted = [...projects].sort((a, b) => b.updatedAt - a.updatedAt);
 
@@ -51,9 +58,40 @@ export function HomeView({
         <div className="brand home-nav-brand">
           STACKED<span className="brand-dot">.</span>
         </div>
-        <div className="home-nav-meta mono">
-          v0.1 · client-side · no signup
-        </div>
+        {profile ? (
+          <div className="home-nav-right">
+            {profile.role === 'admin' && (
+              <button
+                className="home-nav-admin-btn"
+                onClick={onOpenAdmin}
+                title="open admin view"
+              >
+                ⚙ ADMIN
+              </button>
+            )}
+            <div className="user-pill">
+              <span>{profile.display_name ?? 'signed in'}</span>
+              <span
+                className={`user-pill-role ${
+                  profile.role === 'admin' ? 'user-pill-role-admin' : ''
+                }`}
+              >
+                {profile.role}
+              </span>
+              <button
+                className="user-pill-signout"
+                onClick={onSignOut}
+                title="sign out"
+              >
+                ⏻
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="home-nav-meta mono">
+            v0.2 · client-side · no signup
+          </div>
+        )}
       </nav>
       <div className="home">
       <header className="home-hero">

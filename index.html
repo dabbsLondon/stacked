@@ -1,0 +1,978 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta name="theme-color" content="#0b0f17" />
+<meta name="description" content="Live bike-gearing and watts calculator. Set your cassette and chainring, weight, speed and incline — see the power required, cadence, and an animated drivetrain." />
+<meta property="og:title" content="Bike Gearing & Watts Visualizer" />
+<meta property="og:description" content="Live bike-gearing and watts calculator with animated drivetrain and rider." />
+<meta property="og:type" content="website" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%230b0f17'/%3E%3Ccircle cx='20' cy='40' r='12' fill='none' stroke='%2343e8d8' stroke-width='3'/%3E%3Ccircle cx='44' cy='40' r='12' fill='none' stroke='%2343e8d8' stroke-width='3'/%3E%3Ccircle cx='32' cy='40' r='5' fill='%23ffd166'/%3E%3Cpath d='M20 40 L32 40 L44 40 M32 40 L28 22 L40 22' stroke='%23ffd166' stroke-width='2.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
+<title>Bike Gearing & Watts Visualizer</title>
+<style>
+  :root {
+    --bg: #0b0f17;
+    --bg-2: #121826;
+    --panel: #161d2e;
+    --line: #243049;
+    --text: #e6ecf5;
+    --muted: #8a97b3;
+    --accent: #43e8d8;
+    --accent-2: #ffd166;
+    --hot: #ff5d73;
+    --good: #7ee787;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: radial-gradient(1200px 800px at 70% -10%, #1a2240 0%, var(--bg) 60%) fixed;
+    color: var(--text);
+    font-family: ui-sans-serif, -apple-system, "SF Pro Text", "Inter", system-ui, sans-serif;
+    min-height: 100vh;
+  }
+  h1 {
+    font-size: 22px; margin: 0;
+    letter-spacing: 0.5px;
+  }
+  h1 .accent { color: var(--accent); }
+  header {
+    padding: 18px 22px;
+    border-bottom: 1px solid var(--line);
+    display: flex; justify-content: space-between; align-items: center;
+    background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent);
+  }
+  header .sub { color: var(--muted); font-size: 12px; }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 360px 1fr;
+    gap: 18px;
+    padding: 18px;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: 1fr; }
+  }
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 16px 16px 18px;
+    box-shadow: 0 6px 24px rgba(0,0,0,0.35);
+  }
+  .panel h2 {
+    margin: 0 0 12px;
+    font-size: 13px;
+    letter-spacing: 1.4px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  label.field {
+    display: flex; flex-direction: column; gap: 4px;
+    font-size: 12px; color: var(--muted);
+  }
+  label.field input, label.field select {
+    background: var(--bg-2);
+    color: var(--text);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 8px 10px;
+    font: inherit;
+    font-variant-numeric: tabular-nums;
+  }
+  label.field input:focus, label.field select:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(67, 232, 216, 0.15);
+  }
+
+  .slider-row {
+    display: flex; flex-direction: column; gap: 6px;
+    margin-top: 10px;
+  }
+  .slider-row .top {
+    display: flex; justify-content: space-between; align-items: baseline;
+    font-size: 12px; color: var(--muted);
+  }
+  .slider-row .top .val {
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+  }
+  input[type="range"] {
+    -webkit-appearance: none; appearance: none;
+    width: 100%; height: 6px; border-radius: 999px;
+    background: linear-gradient(90deg, var(--accent) 0%, var(--accent) var(--pct,50%), #2a3552 var(--pct,50%), #2a3552 100%);
+    outline: none;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none;
+    width: 18px; height: 18px; border-radius: 50%;
+    background: #fff;
+    border: 3px solid var(--accent);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+    cursor: pointer;
+  }
+  input[type="range"]::-moz-range-thumb {
+    width: 18px; height: 18px; border-radius: 50%;
+    background: #fff;
+    border: 3px solid var(--accent);
+    cursor: pointer;
+  }
+
+  .preset-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .chip {
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    color: var(--muted);
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .chip:hover { color: var(--text); border-color: #3a4870; }
+  .chip.active { background: rgba(67,232,216,0.12); color: var(--accent); border-color: var(--accent); }
+
+  .readout-grid {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;
+    margin-top: 6px;
+  }
+  .readout {
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 10px 12px;
+  }
+  .readout .label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+  .readout .value {
+    font-size: 22px; font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    margin-top: 2px;
+  }
+  .readout .unit { color: var(--muted); font-size: 13px; font-weight: 500; margin-left: 4px; }
+  .readout.big .value { font-size: 30px; }
+  .readout.hot .value { color: var(--hot); }
+  .readout.good .value { color: var(--good); }
+  .readout.gold .value { color: var(--accent-2); }
+  .readout.accent .value { color: var(--accent); }
+
+  .breakdown {
+    margin-top: 10px;
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 10px 12px;
+  }
+  .breakdown .row {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 12px; padding: 4px 0;
+  }
+  .breakdown .row .lbl { width: 90px; color: var(--muted); }
+  .breakdown .row .bar {
+    flex: 1; height: 8px; border-radius: 4px;
+    background: #1c2540; overflow: hidden;
+    position: relative;
+  }
+  .breakdown .row .fill {
+    height: 100%;
+    transition: width 0.25s ease;
+    border-radius: 4px;
+  }
+  .breakdown .row.roll .fill { background: linear-gradient(90deg, #6cc2ff, #4f8bff); }
+  .breakdown .row.air .fill  { background: linear-gradient(90deg, #c084ff, #8358ff); }
+  .breakdown .row.grav .fill { background: linear-gradient(90deg, #ffb84d, #ff5d73); }
+  .breakdown .row .num {
+    width: 60px; text-align: right;
+    font-variant-numeric: tabular-nums; font-size: 12px; color: var(--text);
+  }
+
+  .stage {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    overflow: hidden;
+    position: relative;
+    min-height: 360px;
+  }
+  .stage svg { display: block; width: 100%; height: 100%; }
+  .stage-grid {
+    display: grid;
+    grid-template-rows: 1fr 1fr;
+    gap: 18px;
+  }
+  @media (min-width: 1100px) {
+    .stage-grid { grid-template-rows: 1.2fr 1fr; }
+  }
+
+  .footer-note { color: var(--muted); font-size: 11px; padding: 6px 22px 22px; max-width: 1400px; margin: 0 auto; }
+  .footer-note code { background: #1a2138; padding: 1px 5px; border-radius: 4px; }
+
+  .glow {
+    filter: drop-shadow(0 0 8px rgba(67,232,216,0.5));
+  }
+  .pulse {
+    animation: pulse 1.6s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%,100% { opacity: 0.85; }
+    50% { opacity: 1; }
+  }
+
+  .legend {
+    position: absolute; top: 10px; right: 12px;
+    font-size: 11px; color: var(--muted);
+    background: rgba(11,15,23,0.6);
+    border: 1px solid var(--line);
+    padding: 5px 9px; border-radius: 8px;
+    backdrop-filter: blur(4px);
+  }
+  .legend b { color: var(--text); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>BIKE <span class="accent">GEARING</span> &amp; WATTS</h1>
+  <div class="sub">live physics · animated drivetrain</div>
+</header>
+
+<div class="layout">
+  <!-- ============ CONTROLS ============ -->
+  <aside class="panel" id="controls">
+    <h2>Drivetrain</h2>
+    <div class="grid2">
+      <label class="field">Chainring (teeth)
+        <input id="chainring" type="number" min="20" max="60" step="1" value="30" />
+      </label>
+      <label class="field">Cog (teeth)
+        <input id="cog" type="number" min="9" max="52" step="1" value="36" />
+      </label>
+      <label class="field">Wheel size
+        <select id="wheel">
+          <option value="2.105">700×25C (2.105 m)</option>
+          <option value="2.136">700×32C (2.136 m)</option>
+          <option value="2.170">700×40C (2.170 m)</option>
+          <option value="2.260" selected>29" MTB 2.3" (2.260 m)</option>
+          <option value="2.230">27.5" 2.4" (2.230 m)</option>
+          <option value="2.135">26" 2.1" (2.135 m)</option>
+        </select>
+      </label>
+      <label class="field">Drivetrain efficiency
+        <select id="eff">
+          <option value="0.97">Clean / new (97%)</option>
+          <option value="0.95" selected>Typical (95%)</option>
+          <option value="0.92">Worn / dirty (92%)</option>
+        </select>
+      </label>
+    </div>
+
+    <h2 style="margin-top:18px;">Mass</h2>
+    <div class="grid2">
+      <label class="field">Rider (kg)
+        <input id="rider" type="number" min="30" max="200" step="0.5" value="78" />
+      </label>
+      <label class="field">Bike + gear (kg)
+        <input id="bike" type="number" min="3" max="40" step="0.1" value="12" />
+      </label>
+    </div>
+
+    <h2 style="margin-top:18px;">Aero &amp; Surface</h2>
+    <div class="grid2">
+      <label class="field">CdA (m²)
+        <input id="cda" type="number" min="0.20" max="0.80" step="0.01" value="0.45" />
+      </label>
+      <label class="field">Crr
+        <input id="crr" type="number" min="0.002" max="0.020" step="0.001" value="0.008" />
+      </label>
+    </div>
+
+    <h2 style="margin-top:18px;">Speed</h2>
+    <div class="slider-row">
+      <div class="top"><span>kph</span><span class="val"><span id="speedVal">15</span> kph</span></div>
+      <input id="speed" type="range" min="0" max="60" step="0.5" value="15" />
+    </div>
+    <div class="preset-row" id="speedChips">
+      <span class="chip" data-speed="5">5</span>
+      <span class="chip" data-speed="10">10</span>
+      <span class="chip active" data-speed="15">15</span>
+      <span class="chip" data-speed="20">20</span>
+      <span class="chip" data-speed="30">30</span>
+      <span class="chip" data-speed="40">40</span>
+    </div>
+
+    <h2 style="margin-top:18px;">Incline</h2>
+    <div class="slider-row">
+      <div class="top"><span>gradient</span><span class="val"><span id="gradeVal">10</span> %</span></div>
+      <input id="grade" type="range" min="-10" max="35" step="0.5" value="10" />
+    </div>
+    <div class="preset-row" id="gradeChips">
+      <span class="chip" data-grade="0">0</span>
+      <span class="chip" data-grade="5">5</span>
+      <span class="chip active" data-grade="10">10</span>
+      <span class="chip" data-grade="15">15</span>
+      <span class="chip" data-grade="20">20</span>
+      <span class="chip" data-grade="25">25</span>
+      <span class="chip" data-grade="30">30</span>
+    </div>
+  </aside>
+
+  <!-- ============ STAGE ============ -->
+  <section class="stage-grid">
+    <div class="stage" id="hillStage">
+      <span class="legend"><b>Hill</b> · <span id="legendHill">10%</span></span>
+      <svg id="hillSvg" viewBox="0 0 800 360" preserveAspectRatio="xMidYMid meet">
+        <defs>
+          <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#1c2545" />
+            <stop offset="1" stop-color="#0e1426" />
+          </linearGradient>
+          <linearGradient id="hillGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#2a4a3a" />
+            <stop offset="1" stop-color="#162a22" />
+          </linearGradient>
+          <radialGradient id="sun" cx="0.5" cy="0.5" r="0.5">
+            <stop offset="0" stop-color="#ffd166" stop-opacity="0.9" />
+            <stop offset="1" stop-color="#ffd166" stop-opacity="0" />
+          </radialGradient>
+        </defs>
+        <rect x="0" y="0" width="800" height="360" fill="url(#skyGrad)" />
+        <circle cx="640" cy="80" r="80" fill="url(#sun)" />
+        <!-- Stars -->
+        <g id="stars" opacity="0.5"></g>
+
+        <!-- ============ HUD on hill ============ -->
+        <g id="hillHud" font-family="ui-sans-serif, system-ui, sans-serif">
+          <!-- Big watts panel, top-left -->
+          <g transform="translate(20,20)">
+            <rect width="200" height="92" rx="12" ry="12"
+                  fill="rgba(11,15,23,0.55)" stroke="#243049" stroke-width="1.5" />
+            <text x="14" y="22" font-size="11" fill="#8a97b3" letter-spacing="2">POWER</text>
+            <text id="hudWatts" x="14" y="62" font-size="40" font-weight="800" fill="#43e8d8" style="filter:drop-shadow(0 0 6px rgba(67,232,216,0.4));">0</text>
+            <text x="120" y="62" font-size="16" fill="#8a97b3">W</text>
+            <text id="hudWkg" x="14" y="82" font-size="13" font-weight="600" fill="#ffd166">0.00 W/kg</text>
+          </g>
+
+          <!-- Speed + grade panel, top-center -->
+          <g transform="translate(300,20)">
+            <rect width="200" height="60" rx="12" ry="12"
+                  fill="rgba(11,15,23,0.55)" stroke="#243049" stroke-width="1.5" />
+            <text x="14" y="20" font-size="10" fill="#8a97b3" letter-spacing="2">SPEED</text>
+            <text id="hudSpeed" x="14" y="46" font-size="22" font-weight="800" fill="#e6ecf5">0</text>
+            <text x="64" y="46" font-size="12" fill="#8a97b3">kph</text>
+            <text x="110" y="20" font-size="10" fill="#8a97b3" letter-spacing="2">GRADE</text>
+            <text id="hudGrade" x="110" y="46" font-size="22" font-weight="800" fill="#ff5d73">0%</text>
+          </g>
+
+          <!-- Cadence + ratio panel, top-right (offset from existing legend) -->
+          <g transform="translate(560,50)">
+            <rect width="220" height="60" rx="12" ry="12"
+                  fill="rgba(11,15,23,0.55)" stroke="#243049" stroke-width="1.5" />
+            <text x="14" y="20" font-size="10" fill="#8a97b3" letter-spacing="2">CADENCE</text>
+            <text id="hudRpm" x="14" y="46" font-size="22" font-weight="800" fill="#e6ecf5">0</text>
+            <text x="64" y="46" font-size="12" fill="#8a97b3">rpm</text>
+            <text x="120" y="20" font-size="10" fill="#8a97b3" letter-spacing="2">GEAR</text>
+            <text id="hudGear" x="120" y="46" font-size="16" font-weight="800" fill="#ffd166">30:36</text>
+          </g>
+
+          <!-- Force panel, bottom-left -->
+          <g transform="translate(20,300)">
+            <rect width="170" height="44" rx="10" ry="10"
+                  fill="rgba(11,15,23,0.55)" stroke="#243049" stroke-width="1.5" />
+            <text x="12" y="17" font-size="10" fill="#8a97b3" letter-spacing="2">FORCE @ WHEEL</text>
+            <text id="hudForce" x="12" y="36" font-size="16" font-weight="800" fill="#e6ecf5">0 N</text>
+          </g>
+        </g>
+        <!-- Hill polygon (rebuilt from JS) -->
+        <polygon id="hillPoly" fill="url(#hillGrad)" stroke="#3a5d49" stroke-width="2" />
+        <!-- Distance/grade indicator -->
+        <g id="gradeIndicator" font-family="ui-sans-serif" font-size="13" fill="#8a97b3"></g>
+        <!-- Rider group (rotated to match slope) -->
+        <!-- Geometry: rear wheel at (0,0), front at (95,0), BB at (38,-8),
+             saddle at (20,-55), bars at (78,-50). Rider faces +x. -->
+        <g id="riderGroup">
+          <!-- Rear wheel -->
+          <g id="rearWheel">
+            <circle r="22" fill="none" stroke="#e6ecf5" stroke-width="2.5" />
+            <circle r="3" fill="#43e8d8" />
+            <line x1="-22" y1="0" x2="22" y2="0" stroke="#8a97b3" stroke-width="1" />
+            <line x1="0" y1="-22" x2="0" y2="22" stroke="#8a97b3" stroke-width="1" />
+            <line x1="-15.5" y1="-15.5" x2="15.5" y2="15.5" stroke="#8a97b3" stroke-width="1" />
+            <line x1="15.5" y1="-15.5" x2="-15.5" y2="15.5" stroke="#8a97b3" stroke-width="1" />
+          </g>
+          <!-- Front wheel -->
+          <g id="frontWheel" transform="translate(95,0)">
+            <circle r="22" fill="none" stroke="#e6ecf5" stroke-width="2.5" />
+            <circle r="3" fill="#43e8d8" />
+            <line x1="-22" y1="0" x2="22" y2="0" stroke="#8a97b3" stroke-width="1" />
+            <line x1="0" y1="-22" x2="0" y2="22" stroke="#8a97b3" stroke-width="1" />
+            <line x1="-15.5" y1="-15.5" x2="15.5" y2="15.5" stroke="#8a97b3" stroke-width="1" />
+            <line x1="15.5" y1="-15.5" x2="-15.5" y2="15.5" stroke="#8a97b3" stroke-width="1" />
+          </g>
+
+          <!-- Frame: chainstay, seat stay, seat tube, down tube, top tube, fork -->
+          <g stroke="#43e8d8" stroke-width="3" fill="none" stroke-linecap="round">
+            <line x1="0"  y1="0"   x2="38" y2="-8"  />
+            <line x1="0"  y1="0"   x2="20" y2="-55" />
+            <line x1="38" y1="-8"  x2="20" y2="-55" />
+            <line x1="38" y1="-8"  x2="78" y2="-50" />
+            <line x1="20" y1="-55" x2="78" y2="-50" />
+            <line x1="78" y1="-50" x2="95" y2="0"   />
+          </g>
+          <!-- Saddle -->
+          <line x1="10" y1="-58" x2="30" y2="-58" stroke="#e6ecf5" stroke-width="4" stroke-linecap="round" />
+          <!-- Stem + drop bar -->
+          <line x1="78" y1="-50" x2="80" y2="-56" stroke="#43e8d8" stroke-width="3" stroke-linecap="round" />
+          <path d="M 74 -56 Q 86 -56 84 -46" stroke="#43e8d8" stroke-width="3" fill="none" stroke-linecap="round" />
+
+          <!-- Far leg (behind body, dimmer) -->
+          <g stroke="#5a6885" stroke-width="4" stroke-linecap="round" fill="none">
+            <line id="legFarThigh" x1="20" y1="-58" x2="38" y2="-30" />
+            <line id="legFarShin"  x1="38" y1="-30" x2="38" y2="-8"  />
+          </g>
+
+          <!-- Pedal crank (animated) -->
+          <g id="crankPedal" transform="translate(38,-8)">
+            <circle r="3" fill="#ffd166" />
+            <line x1="0" y1="0" x2="0" y2="14"  stroke="#ffd166" stroke-width="2.5" stroke-linecap="round" />
+            <line x1="0" y1="0" x2="0" y2="-14" stroke="#ffd166" stroke-width="2.5" stroke-linecap="round" />
+            <rect x="-5" y="13"  width="10" height="3" fill="#ffd166" rx="1" />
+            <rect x="-5" y="-16" width="10" height="3" fill="#ffd166" rx="1" />
+          </g>
+
+          <!-- Body: hip → spine → shoulder, then arm to bars, helmeted head -->
+          <g id="riderBody">
+            <!-- Hip pivot -->
+            <circle cx="20" cy="-58" r="4" fill="#43e8d8" />
+            <!-- Spine -->
+            <line x1="20" y1="-58" x2="46" y2="-78" stroke="#e6ecf5" stroke-width="5" stroke-linecap="round" />
+            <!-- Arm -->
+            <line x1="46" y1="-78" x2="78" y2="-50" stroke="#e6ecf5" stroke-width="4" stroke-linecap="round" />
+            <!-- Neck -->
+            <line x1="46" y1="-78" x2="56" y2="-80" stroke="#f4c89c" stroke-width="3.5" stroke-linecap="round" />
+            <!-- Helmet (cycling-shape, points forward) -->
+            <path d="M 49 -82 Q 56 -92 67 -88 Q 71 -84 66 -80 Q 56 -78 49 -82 Z"
+                  fill="#ff5d73" stroke="#7a1f2e" stroke-width="1" />
+            <!-- Helmet vents -->
+            <line x1="55" y1="-87" x2="62" y2="-86" stroke="#7a1f2e" stroke-width="1" />
+            <line x1="58" y1="-89" x2="64" y2="-87" stroke="#7a1f2e" stroke-width="1" />
+            <!-- Face / sunglasses dot -->
+            <circle cx="64" cy="-83" r="1.6" fill="#161d2e" />
+          </g>
+
+          <!-- Near leg (in front of body) -->
+          <g stroke="#43e8d8" stroke-width="4.5" stroke-linecap="round" fill="none">
+            <line id="legNearThigh" x1="20" y1="-58" x2="38" y2="-30" />
+            <line id="legNearShin"  x1="38" y1="-30" x2="38" y2="-8"  />
+          </g>
+        </g>
+      </svg>
+    </div>
+
+    <div class="stage" id="drivetrainStage">
+      <span class="legend">
+        <b>Gear</b> ·
+        <span id="ratioTxt">0.83</span> ·
+        cadence <span id="cadenceTxt">0</span> rpm
+      </span>
+      <svg id="driveSvg" viewBox="0 0 800 360" preserveAspectRatio="xMidYMid meet">
+        <defs>
+          <radialGradient id="ringMetal" cx="0.4" cy="0.4" r="0.7">
+            <stop offset="0" stop-color="#ffe9a0" />
+            <stop offset="0.6" stop-color="#ffd166" />
+            <stop offset="1" stop-color="#a8842b" />
+          </radialGradient>
+          <radialGradient id="cogMetal" cx="0.4" cy="0.4" r="0.7">
+            <stop offset="0" stop-color="#9bf3e7" />
+            <stop offset="0.6" stop-color="#43e8d8" />
+            <stop offset="1" stop-color="#1c8a7e" />
+          </radialGradient>
+        </defs>
+        <!-- Chain (rebuilt in JS) -->
+        <path id="chainPath" stroke="#cfd6e4" stroke-width="3" fill="none" stroke-linecap="round" />
+        <!-- Chainring -->
+        <g id="chainringGroup" transform="translate(250,180)">
+          <circle r="100" fill="url(#ringMetal)" stroke="#7a5e1f" stroke-width="2" />
+          <g id="chainringTeeth"></g>
+          <circle r="24" fill="#161d2e" stroke="#7a5e1f" stroke-width="2" />
+          <g stroke="#7a5e1f" stroke-width="3" stroke-linecap="round">
+            <line x1="0" y1="-22" x2="0" y2="22" />
+            <line x1="-22" y1="0" x2="22" y2="0" />
+            <line x1="-15.5" y1="-15.5" x2="15.5" y2="15.5" />
+            <line x1="15.5" y1="-15.5" x2="-15.5" y2="15.5" />
+          </g>
+          <text id="chainringLabel" text-anchor="middle" y="6" fill="#ffd166" font-family="ui-sans-serif" font-weight="800" font-size="20">30T</text>
+        </g>
+        <!-- Cassette cog -->
+        <g id="cogGroup" transform="translate(580,180)">
+          <circle r="60" fill="url(#cogMetal)" stroke="#1c8a7e" stroke-width="2" />
+          <g id="cogTeeth"></g>
+          <circle r="14" fill="#161d2e" stroke="#1c8a7e" stroke-width="2" />
+          <g stroke="#1c8a7e" stroke-width="2" stroke-linecap="round">
+            <line x1="0" y1="-12" x2="0" y2="12" />
+            <line x1="-12" y1="0" x2="12" y2="0" />
+          </g>
+          <text id="cogLabel" text-anchor="middle" y="4" fill="#43e8d8" font-family="ui-sans-serif" font-weight="800" font-size="14">36T</text>
+        </g>
+
+        <!-- HUD on right -->
+        <g font-family="ui-sans-serif" fill="#8a97b3" font-size="12">
+          <text x="700" y="40">DEVELOPMENT</text>
+          <text id="devTxt" x="700" y="60" font-size="22" font-weight="800" fill="#e6ecf5">— m</text>
+          <text x="700" y="100">SPEED @ 80 RPM</text>
+          <text id="speed80Txt" x="700" y="120" font-size="22" font-weight="800" fill="#e6ecf5">— kph</text>
+        </g>
+      </svg>
+    </div>
+  </section>
+</div>
+
+<!-- ============ READOUTS BELOW ============ -->
+<div class="layout" style="margin-top:-8px;">
+  <aside class="panel">
+    <h2>Power required</h2>
+    <div class="readout-grid">
+      <div class="readout big accent">
+        <div class="label">Watts</div>
+        <div class="value"><span id="wattsTxt">0</span><span class="unit">W</span></div>
+      </div>
+      <div class="readout big gold">
+        <div class="label">W / kg</div>
+        <div class="value"><span id="wkgTxt">0.00</span><span class="unit">W/kg</span></div>
+      </div>
+      <div class="readout">
+        <div class="label">Cadence</div>
+        <div class="value"><span id="rpmTxt">0</span><span class="unit">rpm</span></div>
+      </div>
+      <div class="readout">
+        <div class="label">Force at wheel</div>
+        <div class="value"><span id="forceTxt">0</span><span class="unit">N</span></div>
+      </div>
+    </div>
+
+    <div class="breakdown" id="breakdown">
+      <div class="row roll"><span class="lbl">Rolling</span><div class="bar"><div class="fill" id="fillRoll" style="width:0%"></div></div><span class="num" id="rollW">0 W</span></div>
+      <div class="row air"><span class="lbl">Aero</span><div class="bar"><div class="fill" id="fillAir" style="width:0%"></div></div><span class="num" id="airW">0 W</span></div>
+      <div class="row grav"><span class="lbl">Gravity</span><div class="bar"><div class="fill" id="fillGrav" style="width:0%"></div></div><span class="num" id="gravW">0 W</span></div>
+    </div>
+  </aside>
+
+  <aside class="panel">
+    <h2>Watts at preset speeds (current incline)</h2>
+    <div id="presetGrid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(78px,1fr));gap:8px;"></div>
+    <h2 style="margin-top:14px;">Watts at preset inclines (current speed)</h2>
+    <div id="inclineGrid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(78px,1fr));gap:8px;"></div>
+  </aside>
+</div>
+
+<div class="footer-note">
+  Power model: <code>P = (Crr·m·g·cosθ + 0.5·CdA·ρ·v² + m·g·sinθ) · v / efficiency</code>.
+  Air density ρ ≈ 1.225 kg/m³, g = 9.81 m/s². Negative wattages on descents are clamped to 0 (you'd be coasting).
+</div>
+
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const G = 9.81;
+  const RHO = 1.225;
+
+  // ----------- Inputs -----------
+  const inputs = {
+    chainring: $('chainring'),
+    cog: $('cog'),
+    wheel: $('wheel'),
+    eff: $('eff'),
+    rider: $('rider'),
+    bike: $('bike'),
+    cda: $('cda'),
+    crr: $('crr'),
+    speed: $('speed'),
+    grade: $('grade'),
+  };
+
+  // ----------- Slider fill -----------
+  function paintSlider(el) {
+    const min = +el.min, max = +el.max, val = +el.value;
+    const pct = ((val - min) / (max - min)) * 100;
+    el.style.setProperty('--pct', pct + '%');
+  }
+  paintSlider(inputs.speed);
+  paintSlider(inputs.grade);
+
+  // ----------- Star sprinkle -----------
+  const stars = $('stars');
+  for (let i = 0; i < 40; i++) {
+    const s = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    s.setAttribute('cx', Math.random() * 800);
+    s.setAttribute('cy', Math.random() * 180);
+    s.setAttribute('r', Math.random() * 1.2 + 0.3);
+    s.setAttribute('fill', '#fff');
+    s.setAttribute('opacity', (Math.random() * 0.7 + 0.2).toFixed(2));
+    stars.appendChild(s);
+  }
+
+  // ----------- Build teeth on chainring + cog -----------
+  function buildTeeth(group, count, radius, toothLen, color) {
+    group.innerHTML = '';
+    for (let i = 0; i < count; i++) {
+      const ang = (i / count) * Math.PI * 2;
+      const x1 = Math.cos(ang) * radius;
+      const y1 = Math.sin(ang) * radius;
+      const x2 = Math.cos(ang) * (radius + toothLen);
+      const y2 = Math.sin(ang) * (radius + toothLen);
+      const ln = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      ln.setAttribute('x1', x1.toFixed(2));
+      ln.setAttribute('y1', y1.toFixed(2));
+      ln.setAttribute('x2', x2.toFixed(2));
+      ln.setAttribute('y2', y2.toFixed(2));
+      ln.setAttribute('stroke', color);
+      ln.setAttribute('stroke-width', 3);
+      ln.setAttribute('stroke-linecap', 'round');
+      group.appendChild(ln);
+    }
+  }
+
+  // ----------- Chain path between two circles -----------
+  // Uses external tangents for two circles centered at C1=(x1,y1) r=R1 and C2=(x2,y2) r=R2
+  function chainPath(x1, y1, R1, x2, y2, R2) {
+    const dx = x2 - x1, dy = y2 - y1;
+    const d = Math.hypot(dx, dy);
+    // For external tangents with possibly different radii:
+    const phi = Math.atan2(dy, dx);
+    const alpha = Math.acos((R1 - R2) / d);
+    // Top tangent
+    const tx1 = x1 + R1 * Math.cos(phi + alpha);
+    const ty1 = y1 + R1 * Math.sin(phi + alpha);
+    const tx2 = x2 + R2 * Math.cos(phi + alpha);
+    const ty2 = y2 + R2 * Math.sin(phi + alpha);
+    // Bottom tangent
+    const bx1 = x1 + R1 * Math.cos(phi - alpha);
+    const by1 = y1 + R1 * Math.sin(phi - alpha);
+    const bx2 = x2 + R2 * Math.cos(phi - alpha);
+    const by2 = y2 + R2 * Math.sin(phi - alpha);
+
+    // Arc sweeps along outside of each pulley
+    return [
+      `M ${tx1.toFixed(1)} ${ty1.toFixed(1)}`,
+      `L ${tx2.toFixed(1)} ${ty2.toFixed(1)}`,
+      `A ${R2} ${R2} 0 0 1 ${bx2.toFixed(1)} ${by2.toFixed(1)}`,
+      `L ${bx1.toFixed(1)} ${by1.toFixed(1)}`,
+      `A ${R1} ${R1} 0 0 1 ${tx1.toFixed(1)} ${ty1.toFixed(1)}`,
+      'Z'
+    ].join(' ');
+  }
+
+  // ----------- Physics -----------
+  function powerWatts(speedKph, gradePct, p) {
+    if (speedKph <= 0) return { watts: 0, roll: 0, air: 0, grav: 0, force: 0 };
+    const v = speedKph / 3.6;
+    const m = p.rider + p.bike;
+    const theta = Math.atan(gradePct / 100);
+    const fRoll = p.crr * m * G * Math.cos(theta);
+    const fAir = 0.5 * p.cda * RHO * v * v;
+    const fGrav = m * G * Math.sin(theta);
+    const fTotal = fRoll + fAir + fGrav;
+    const pRoll = (fRoll * v) / p.eff;
+    const pAir = (fAir * v) / p.eff;
+    const pGrav = (fGrav * v) / p.eff;
+    const watts = pRoll + pAir + pGrav;
+    return {
+      watts: Math.max(0, watts),
+      roll: Math.max(0, pRoll),
+      air: Math.max(0, pAir),
+      grav: pGrav, // can be negative on descent
+      force: fTotal,
+    };
+  }
+
+  function readState() {
+    return {
+      chainring: +inputs.chainring.value || 30,
+      cog: +inputs.cog.value || 36,
+      wheel: +inputs.wheel.value,
+      eff: +inputs.eff.value,
+      rider: +inputs.rider.value || 75,
+      bike: +inputs.bike.value || 10,
+      cda: +inputs.cda.value || 0.4,
+      crr: +inputs.crr.value || 0.005,
+      speed: +inputs.speed.value || 0,
+      grade: +inputs.grade.value || 0,
+    };
+  }
+
+  // ----------- Animation loop for spinning gears -----------
+  let lastT = 0;
+  let chainringAngle = 0, cogAngle = 0, wheelAngle = 0;
+  let currentRpm = 0; // updated by main render
+  let currentRatio = 1;
+
+  function animate(t) {
+    const dt = Math.min(0.05, (t - lastT) / 1000 || 0);
+    lastT = t;
+
+    const omegaCrank = (currentRpm / 60) * Math.PI * 2; // rad/s
+    const omegaCog = omegaCrank * currentRatio;
+    chainringAngle += omegaCrank * dt;
+    cogAngle += omegaCog * dt;
+    wheelAngle += omegaCog * dt; // cog and rear wheel co-rotate
+
+    const cr = $('chainringGroup');
+    cr.setAttribute('transform', `translate(250,180) rotate(${(chainringAngle * 180 / Math.PI).toFixed(2)})`);
+    const cg = $('cogGroup');
+    cg.setAttribute('transform', `translate(580,180) rotate(${(cogAngle * 180 / Math.PI).toFixed(2)})`);
+
+    const crankDeg = (chainringAngle * 180 / Math.PI).toFixed(2);
+    const cp = $('crankPedal');
+    cp.setAttribute('transform', `translate(38,-8) rotate(${crankDeg})`);
+
+    const rw = $('rearWheel');
+    rw.setAttribute('transform', `rotate(${(wheelAngle * 180 / Math.PI).toFixed(2)})`);
+    const fw = $('frontWheel');
+    fw.setAttribute('transform', `translate(95,0) rotate(${(wheelAngle * 180 / Math.PI).toFixed(2)})`);
+
+    updateLegs(chainringAngle);
+
+    requestAnimationFrame(animate);
+  }
+  requestAnimationFrame(animate);
+
+  // ----------- Pedaling legs (2-link IK) -----------
+  // Hip stays at (20,-58). Crank center at BB=(38,-8), crank arm 14.
+  // Knee position is found via two-bar IK with knee biased forward (+x).
+  const HIP = { x: 20, y: -58 };
+  const BB  = { x: 38, y: -8  };
+  const CRANK_R = 14;
+  const THIGH = 30, SHIN = 30;
+
+  function ikKnee(target) {
+    const dx = target.x - HIP.x, dy = target.y - HIP.y;
+    let d = Math.hypot(dx, dy);
+    d = Math.min(THIGH + SHIN - 0.5, Math.max(Math.abs(THIGH - SHIN) + 0.5, d));
+    const a = (THIGH * THIGH - SHIN * SHIN + d * d) / (2 * d);
+    const h = Math.sqrt(Math.max(0, THIGH * THIGH - a * a));
+    const ux = (target.x - HIP.x) / d;
+    const uy = (target.y - HIP.y) / d;
+    // Two perpendicular candidates; pick one that puts knee forward (+x).
+    let px = -uy, py = ux;
+    if (px < 0) { px = uy; py = -ux; }
+    return { x: HIP.x + ux * a + px * h, y: HIP.y + uy * a + py * h };
+  }
+
+  function setLeg(thighEl, shinEl, knee, pedal) {
+    thighEl.setAttribute('x2', knee.x.toFixed(1));
+    thighEl.setAttribute('y2', knee.y.toFixed(1));
+    shinEl.setAttribute('x1', knee.x.toFixed(1));
+    shinEl.setAttribute('y1', knee.y.toFixed(1));
+    shinEl.setAttribute('x2', pedal.x.toFixed(1));
+    shinEl.setAttribute('y2', pedal.y.toFixed(1));
+  }
+
+  const legNearThigh = $('legNearThigh');
+  const legNearShin  = $('legNearShin');
+  const legFarThigh  = $('legFarThigh');
+  const legFarShin   = $('legFarShin');
+
+  function updateLegs(crankAngle) {
+    const nearPedal = {
+      x: BB.x + Math.cos(crankAngle) * CRANK_R,
+      y: BB.y + Math.sin(crankAngle) * CRANK_R,
+    };
+    const farPedal = {
+      x: BB.x + Math.cos(crankAngle + Math.PI) * CRANK_R,
+      y: BB.y + Math.sin(crankAngle + Math.PI) * CRANK_R,
+    };
+    setLeg(legNearThigh, legNearShin, ikKnee(nearPedal), nearPedal);
+    setLeg(legFarThigh,  legFarShin,  ikKnee(farPedal),  farPedal);
+  }
+
+  // ----------- Hill geometry -----------
+  function updateHill(gradePct) {
+    // Build a slope going up from bottom-left to upper-right, capped by horizon.
+    const W = 800, H = 360;
+    const baseY = 320;
+    // 100 horizontal pixels = some vertical rise based on grade
+    // Slope angle in radians
+    const theta = Math.atan(gradePct / 100);
+    // We'll fix the base of the rider near x=180 and rotate the rider group
+    // The hill polygon: start at (0, baseY), then apex at right side.
+    const apexX = W;
+    const apexY = baseY - W * Math.tan(theta);
+    const pts = `0,${H} 0,${baseY} ${apexX},${apexY} ${W},${H}`;
+    $('hillPoly').setAttribute('points', pts);
+
+    // Place rider on the slope
+    const riderX = 180;
+    const riderY = baseY - riderX * Math.tan(theta) - 22; // sit on hill (wheel radius offset)
+    const angDeg = -(theta * 180 / Math.PI);
+    $('riderGroup').setAttribute('transform', `translate(${riderX},${riderY}) rotate(${angDeg.toFixed(2)})`);
+
+    // Grade indicator (hypotenuse triangle in corner)
+    const gi = $('gradeIndicator');
+    gi.innerHTML = '';
+    const ix = 30, iy = 300, run = 80;
+    const rise = run * Math.tan(theta);
+    gi.innerHTML = `
+      <line x1="${ix}" y1="${iy}" x2="${ix+run}" y2="${iy}" stroke="#3a4870" stroke-width="1.5" stroke-dasharray="3 3"/>
+      <line x1="${ix+run}" y1="${iy}" x2="${ix+run}" y2="${iy-rise}" stroke="#3a4870" stroke-width="1.5" stroke-dasharray="3 3"/>
+      <line x1="${ix}" y1="${iy}" x2="${ix+run}" y2="${iy-rise}" stroke="#43e8d8" stroke-width="2"/>
+      <text x="${ix+run+6}" y="${iy-rise/2+4}" fill="#43e8d8" font-weight="700">${gradePct.toFixed(1)}%</text>
+    `;
+  }
+
+  // ----------- Drivetrain visual -----------
+  function updateDrivetrain(s) {
+    // Scale chainring/cog visual radii by tooth count, but keep in reasonable bounds
+    const ringR = Math.min(120, 40 + s.chainring * 1.6);
+    const cogR  = Math.min(75, 18 + s.cog * 1.2);
+
+    // Position
+    const ringCenter = { x: 250, y: 180 };
+    const cogCenter  = { x: 580, y: 180 };
+
+    // Rebuild teeth
+    buildTeeth($('chainringTeeth'), s.chainring, ringR, 6, '#7a5e1f');
+    buildTeeth($('cogTeeth'), s.cog, cogR, 4, '#1c8a7e');
+
+    // Update ring/cog circles via direct radius
+    $('chainringGroup').querySelector('circle').setAttribute('r', ringR);
+    $('cogGroup').querySelector('circle').setAttribute('r', cogR);
+
+    // Update labels
+    $('chainringLabel').textContent = s.chainring + 'T';
+    $('cogLabel').textContent = s.cog + 'T';
+
+    // Chain
+    const path = chainPath(ringCenter.x, ringCenter.y, ringR + 3, cogCenter.x, cogCenter.y, cogR + 3);
+    $('chainPath').setAttribute('d', path);
+
+    // Ratio + cadence
+    const ratio = s.chainring / s.cog;
+    currentRatio = ratio;
+    const v = s.speed / 3.6; // m/s
+    const rpm = (v * 60) / (s.wheel * ratio); // crank rpm
+    currentRpm = rpm;
+
+    $('ratioTxt').textContent = ratio.toFixed(2);
+    $('cadenceTxt').textContent = rpm.toFixed(0);
+
+    // Development = meters per crank revolution
+    const dev = s.wheel * ratio;
+    $('devTxt').textContent = dev.toFixed(2) + ' m';
+
+    // Speed at 80 rpm
+    const v80 = (80 / 60) * ratio * s.wheel * 3.6;
+    $('speed80Txt').textContent = v80.toFixed(1) + ' kph';
+  }
+
+  // ----------- Render readouts + breakdown + presets -----------
+  const presetSpeeds = [5, 10, 15, 20, 25, 30];
+  const presetGrades = [0, 5, 10, 15, 20, 25, 30];
+
+  function renderPresets(s) {
+    const pg = $('presetGrid'); pg.innerHTML = '';
+    for (const sp of presetSpeeds) {
+      const r = powerWatts(sp, s.grade, s);
+      const cell = document.createElement('div');
+      cell.className = 'readout';
+      cell.innerHTML = `
+        <div class="label">${sp} kph</div>
+        <div class="value">${Math.round(r.watts)}<span class="unit">W</span></div>
+      `;
+      if (sp === Math.round(s.speed)) cell.style.borderColor = 'var(--accent)';
+      pg.appendChild(cell);
+    }
+    const ig = $('inclineGrid'); ig.innerHTML = '';
+    for (const gr of presetGrades) {
+      const r = powerWatts(s.speed, gr, s);
+      const cell = document.createElement('div');
+      cell.className = 'readout';
+      const isCurrent = Math.abs(gr - s.grade) < 0.01;
+      cell.innerHTML = `
+        <div class="label">${gr}%</div>
+        <div class="value">${Math.round(r.watts)}<span class="unit">W</span></div>
+      `;
+      if (isCurrent) cell.style.borderColor = 'var(--accent)';
+      ig.appendChild(cell);
+    }
+  }
+
+  function render() {
+    const s = readState();
+    paintSlider(inputs.speed);
+    paintSlider(inputs.grade);
+    $('speedVal').textContent = s.speed.toFixed(s.speed % 1 === 0 ? 0 : 1);
+    $('gradeVal').textContent = s.grade.toFixed(s.grade % 1 === 0 ? 0 : 1);
+    $('legendHill').textContent = s.grade.toFixed(1) + '%';
+
+    // Highlight active chips
+    document.querySelectorAll('#speedChips .chip').forEach(c => {
+      c.classList.toggle('active', Math.round(s.speed) === +c.dataset.speed);
+    });
+    document.querySelectorAll('#gradeChips .chip').forEach(c => {
+      c.classList.toggle('active', Math.round(s.grade) === +c.dataset.grade);
+    });
+
+    // Drivetrain visual
+    updateDrivetrain(s);
+    // Hill
+    updateHill(s.grade);
+
+    // Power
+    const r = powerWatts(s.speed, s.grade, s);
+    const wattsRound = Math.round(r.watts);
+    const wkg = (r.watts / s.rider).toFixed(2);
+    $('wattsTxt').textContent = wattsRound;
+    $('wkgTxt').textContent = wkg;
+    $('rpmTxt').textContent = currentRpm.toFixed(0);
+    $('forceTxt').textContent = r.force.toFixed(0);
+
+    // Hill HUD overlay
+    $('hudWatts').textContent = wattsRound;
+    $('hudWkg').textContent = wkg + ' W/kg';
+    $('hudSpeed').textContent = s.speed.toFixed(s.speed % 1 === 0 ? 0 : 1);
+    $('hudGrade').textContent = s.grade.toFixed(s.grade % 1 === 0 ? 0 : 1) + '%';
+    $('hudRpm').textContent = currentRpm.toFixed(0);
+    $('hudGear').textContent = s.chainring + ':' + s.cog;
+    $('hudForce').textContent = r.force.toFixed(0) + ' N';
+
+    // Breakdown
+    const total = Math.max(1, Math.abs(r.roll) + Math.abs(r.air) + Math.abs(r.grav));
+    $('fillRoll').style.width = (r.roll / total * 100).toFixed(0) + '%';
+    $('fillAir').style.width  = (r.air  / total * 100).toFixed(0) + '%';
+    $('fillGrav').style.width = (Math.max(0, r.grav) / total * 100).toFixed(0) + '%';
+    $('rollW').textContent = Math.round(r.roll) + ' W';
+    $('airW').textContent  = Math.round(r.air)  + ' W';
+    $('gravW').textContent = Math.round(r.grav) + ' W';
+
+    renderPresets(s);
+  }
+
+  // ----------- Wire events -----------
+  Object.values(inputs).forEach(el => {
+    el.addEventListener('input', render);
+    el.addEventListener('change', render);
+  });
+  document.querySelectorAll('#speedChips .chip').forEach(c => {
+    c.addEventListener('click', () => {
+      inputs.speed.value = c.dataset.speed;
+      render();
+    });
+  });
+  document.querySelectorAll('#gradeChips .chip').forEach(c => {
+    c.addEventListener('click', () => {
+      inputs.grade.value = c.dataset.grade;
+      render();
+    });
+  });
+
+  render();
+})();
+</script>
+
+</body>
+</html>

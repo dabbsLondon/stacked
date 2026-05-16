@@ -122,6 +122,14 @@ npm run build        # tsc + vite build → dist/
 npm run preview      # serve the production build locally
 ```
 
+### Deploy
+
+Push to `main` and the GitHub Actions workflow at
+[`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) builds and
+publishes to GitHub Pages automatically. Full step-by-step (Pages setup,
+Supabase project + schema, custom domain, alternative hosts):
+[`docs/DEPLOY.md`](docs/DEPLOY.md).
+
 ### Test
 
 ```sh

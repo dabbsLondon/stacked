@@ -19,6 +19,7 @@ import { ThreeDView } from './components/ThreeDView';
 import {
   DEFAULT_BRIDGE,
   deleteProject,
+  duplicateProject,
   emptySnapshot,
   listProjects,
   loadWorking,
@@ -256,6 +257,17 @@ export default function App() {
       const fresh = emptySnapshot('untitled');
       loadSnapshot(fresh);
     }
+  }
+
+  function handleDuplicate(source: ProjectSnapshot) {
+    const proposed = `${source.name} (copy)`;
+    const name = prompt('Duplicate as:', proposed);
+    if (!name || !name.trim()) return;
+    const dup = duplicateProject(source, name.trim());
+    setSavedProjects(listProjects());
+    // Switch to the new project so the user can immediately edit it.
+    loadSnapshot(dup);
+    setView('editor');
   }
 
   function handleSaveCurrent() {
@@ -530,6 +542,7 @@ export default function App() {
         onNew={handleNewProject}
         onNewIn={handleNewProjectInMode}
         onDelete={handleDelete}
+        onDuplicate={handleDuplicate}
         onContinue={() => setView('editor')}
       />
     );
@@ -556,6 +569,7 @@ export default function App() {
           onSaveAs={handleSaveAs}
           onNew={handleNewProject}
           onDelete={handleDelete}
+          onDuplicate={handleDuplicate}
           onRename={handleRename}
         />
         <div className="mode-toggle mono">

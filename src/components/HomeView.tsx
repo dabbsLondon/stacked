@@ -10,6 +10,7 @@ interface Props {
   onNew: () => void;
   onNewIn: (mode: Mode) => void;
   onDelete: (id: string) => void;
+  onDuplicate: (p: ProjectSnapshot) => void;
   onContinue: () => void;
 }
 
@@ -22,6 +23,7 @@ export function HomeView({
   onNew,
   onNewIn,
   onDelete,
+  onDuplicate,
   onContinue,
 }: Props) {
   const sorted = [...projects].sort((a, b) => b.updatedAt - a.updatedAt);
@@ -202,6 +204,7 @@ export function HomeView({
                 key={p.id}
                 project={p}
                 onOpen={() => onOpen(p)}
+                onDuplicate={() => onDuplicate(p)}
                 onDelete={() => {
                   if (confirm(`Delete "${p.name}"?`)) onDelete(p.id);
                 }}
@@ -278,10 +281,12 @@ function Stat({
 function ProjectCard({
   project,
   onOpen,
+  onDuplicate,
   onDelete,
 }: {
   project: ProjectSnapshot;
   onOpen: () => void;
+  onDuplicate: () => void;
   onDelete: () => void;
 }) {
   const climbCount = project.stitch.climbs.length;
@@ -304,16 +309,28 @@ function ProjectCard({
     <article className="project-card" onClick={onOpen}>
       <header className="project-card-head">
         <h3 className="project-card-name">{project.name}</h3>
-        <button
-          className="project-card-del"
-          onClick={(e) => {
-            e.stopPropagation();
-            onDelete();
-          }}
-          title="delete project"
-        >
-          ×
-        </button>
+        <div className="project-card-actions">
+          <button
+            className="project-card-action"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDuplicate();
+            }}
+            title="duplicate project"
+          >
+            ⎘
+          </button>
+          <button
+            className="project-card-action project-card-del"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete();
+            }}
+            title="delete project"
+          >
+            ×
+          </button>
+        </div>
       </header>
       <div className="project-card-thumb">
         <Sparkline climbs={project.stitch.climbs} />

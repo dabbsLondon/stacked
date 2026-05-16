@@ -9,6 +9,7 @@ interface Props {
   onSaveAs: (name: string) => void;
   onNew: () => void;
   onDelete: (id: string) => void;
+  onDuplicate: (p: ProjectSnapshot) => void;
   onRename: (name: string) => void;
 }
 
@@ -20,6 +21,7 @@ export function ProjectMenu({
   onSaveAs,
   onNew,
   onDelete,
+  onDuplicate,
   onRename,
 }: Props) {
   const [open, setOpen] = useState(false);
@@ -120,6 +122,17 @@ export function ProjectMenu({
                         {p.stitch.climbs.length} climbs ·{' '}
                         {timeAgo(p.updatedAt)}
                       </div>
+                    </button>
+                    <button
+                      className="project-menu-dup"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDuplicate(p);
+                        setOpen(false);
+                      }}
+                      title="duplicate project"
+                    >
+                      ⎘
                     </button>
                     <button
                       className="project-menu-del"

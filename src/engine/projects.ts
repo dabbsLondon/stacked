@@ -110,6 +110,39 @@ export function deleteProject(id: string) {
   saveProjects(listProjects().filter((p) => p.id !== id));
 }
 
+// Make a deep-cloned copy of `source` with a new id, the supplied name, and
+// fresh timestamps. Persists it and returns the new snapshot.
+export function duplicateProject(
+  source: ProjectSnapshot,
+  newName: string,
+): ProjectSnapshot {
+  const cloned: ProjectSnapshot = JSON.parse(
+    JSON.stringify(source),
+  ) as ProjectSnapshot;
+  cloned.id = crypto.randomUUID();
+  cloned.name = newName.trim() || `${source.name} (copy)`;
+  cloned.createdAt = Date.now();
+  cloned.updatedAt = Date.now();
+  // Give bridges and cut-sources fresh ids so duplicating doesn't share
+  // mutable handles with the original.
+  cloned.stitch.bridges = cloned.stitch.bridges.map((b) =>
+    b ? { ...b, id: crypto.randomUUID() } : b,
+  );
+  cloned.cut.sources = cloned.cut.sources.map((s) => ({
+    ...s,
+    id: crypto.randomUUID(),
+    slices: s.slices.map((slice) => ({
+      ...slice,
+      id: crypto.randomUUID(),
+    })),
+  }));
+  // Old activeSourceId / activeSliceId pointed at the originals — clear them.
+  cloned.cut.activeSourceId = null;
+  cloned.cut.activeSliceId = null;
+  saveProject(cloned);
+  return cloned;
+}
+
 export function emptySnapshot(name = 'untitled'): ProjectSnapshot {
   return {
     id: crypto.randomUUID(),

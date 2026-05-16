@@ -266,12 +266,21 @@ button:disabled {
   color: var(--text-3);
 }
 
+.project-menu-dup,
 .project-menu-del {
   width: 26px;
   border-radius: 6px;
   background: transparent;
   color: var(--text-3);
   font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.project-menu-dup:hover {
+  background: rgba(255, 95, 31, 0.12);
+  color: var(--orange);
 }
 
 .project-menu-del:hover {
@@ -418,8 +427,19 @@ button:disabled {
 }
 
 .home-nav-brand {
-  font-size: 16px;
-  letter-spacing: 0.04em;
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  font-size: 22px;
+  letter-spacing: 0.02em;
+  background: linear-gradient(180deg, #fff 0%, var(--orange-2) 70%, var(--orange) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.home-nav-brand .brand-dot {
+  -webkit-text-fill-color: var(--orange);
+  color: var(--orange);
 }
 
 .home-nav-meta {
@@ -851,7 +871,13 @@ button:disabled {
   flex: 1;
 }
 
-.project-card-del {
+.project-card-actions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.project-card-action {
   width: 26px;
   height: 26px;
   border-radius: 50%;
@@ -860,10 +886,17 @@ button:disabled {
   color: var(--text-3);
   font-size: 14px;
   line-height: 1;
-  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.project-card-del:hover {
+.project-card-action:hover {
+  border-color: var(--orange);
+  color: var(--orange);
+}
+
+.project-card-action.project-card-del:hover {
   border-color: var(--red);
   color: var(--red);
 }

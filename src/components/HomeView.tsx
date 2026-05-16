@@ -46,7 +46,7 @@ export function HomeView({
   );
 
   return (
-    <div className="home">
+    <div className="home-shell">
       <nav className="home-nav">
         <div className="brand home-nav-brand">
           STACKED<span className="brand-dot">.</span>
@@ -55,7 +55,7 @@ export function HomeView({
           v0.1 · client-side · no signup
         </div>
       </nav>
-
+      <div className="home">
       <header className="home-hero">
         <div className="home-hero-bg" aria-hidden="true">
           <svg
@@ -218,6 +218,7 @@ export function HomeView({
         100% browser · GPX in, GPX out · no servers, no signup, no privacy
         surface
       </footer>
+      </div>
     </div>
   );
 }

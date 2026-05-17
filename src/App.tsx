@@ -112,6 +112,13 @@ export default function App() {
     projectIdRef.current = projectId;
   }, [projectId]);
 
+  // Serialise outbound PB pushes. Two rapid Save clicks used to fire two
+  // in-flight saveRemoteProject calls with the same (still-unmigrated) UUID
+  // id, and PocketBase happily CREATEd both → duplicate rows. Chaining each
+  // push onto the previous one means click 2 only runs after click 1 has
+  // already migrated the id to a PB id, so it falls through to UPDATE.
+  const pushQueueRef = useRef<Promise<unknown>>(Promise.resolve());
+
   // Push a snapshot to PocketBase and migrate the local id to PB's
   // generated id when needed. Centralising this here is what stops the
   // "every save creates another PB row" duplication: PocketBase rejects
@@ -121,18 +128,35 @@ export default function App() {
     snap: ProjectSnapshot,
   ): Promise<ProjectSnapshot> {
     if (auth.kind !== 'signed-in') return snap;
-    const row = await saveRemoteProject(snap);
-    if (!row) return snap;
-    if (row.id === snap.id) return snap;
-    deleteProject(snap.id);
-    const migrated: ProjectSnapshot = { ...snap, id: row.id };
-    saveProject(migrated);
-    if (projectIdRef.current === snap.id) {
-      projectIdRef.current = row.id;
-      setProjectId(row.id);
-    }
-    setSavedProjects(listProjects());
-    return migrated;
+    // Snapshot whether this is "the current project" *at call time* — used
+    // later to decide whether to re-read the live id post-await (an earlier
+    // queued push may have migrated us in the meantime).
+    const wasCurrentAtCallTime = projectIdRef.current === snap.id;
+    const job = pushQueueRef.current.then(async (): Promise<ProjectSnapshot> => {
+      const liveId = projectIdRef.current;
+      const toPush =
+        wasCurrentAtCallTime && liveId !== snap.id
+          ? { ...snap, id: liveId }
+          : snap;
+      const row = await saveRemoteProject(toPush);
+      if (!row) return toPush;
+      if (row.id === toPush.id) return toPush;
+      deleteProject(toPush.id);
+      const migrated: ProjectSnapshot = { ...toPush, id: row.id };
+      saveProject(migrated);
+      if (projectIdRef.current === toPush.id) {
+        projectIdRef.current = row.id;
+        setProjectId(row.id);
+        // Re-stamp lastSavedKey against the migrated snapshot so the SAVE
+        // button doesn't immediately flip back to "dirty" purely because
+        // the id changed under us.
+        setLastSavedKey(snapshotKey(migrated));
+      }
+      setSavedProjects(listProjects());
+      return migrated;
+    });
+    pushQueueRef.current = job.catch(() => undefined);
+    return job;
   }
 
   // Keep bridges array length in sync with climbs.length - 1.

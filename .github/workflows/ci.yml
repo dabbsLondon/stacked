@@ -1,5 +1,8 @@
 name: CI
 
+# Lightweight check on every push / PR: typecheck + tests + coverage summary.
+# No production build, no deploy — deployment is manual to the home server.
+
 on:
   push:
     branches: [main]
@@ -8,7 +11,7 @@ on:
 
 jobs:
   ci:
-    name: typecheck · test · build
+    name: typecheck · test
     runs-on: ubuntu-latest
 
     steps:
@@ -42,23 +45,3 @@ jobs:
           path: coverage/
           if-no-files-found: warn
           retention-days: 14
-
-      - name: Upload vitest results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: vitest-results
-          path: vitest-results.json
-          if-no-files-found: warn
-          retention-days: 14
-
-      - name: Build production bundle
-        run: npm run build
-
-      - name: Upload dist
-        if: github.ref == 'refs/heads/main'
-        uses: actions/upload-artifact@v4
-        with:
-          name: dist
-          path: dist/
-          retention-days: 7

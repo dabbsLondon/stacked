@@ -32,6 +32,7 @@ export interface RemoteProjectRow {
   owner_id: string;
   name: string;
   snapshot: ProjectSnapshot;
+  is_public: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -48,6 +49,7 @@ interface PbProjectRecord {
   owner: string;
   name: string;
   snapshot: ProjectSnapshot;
+  is_public?: boolean;
   created: string;
   updated: string;
   expand?: {
@@ -61,6 +63,7 @@ function recordToProject(r: PbProjectRecord): RemoteProjectRow {
     owner_id: r.owner,
     name: r.name,
     snapshot: r.snapshot,
+    is_public: Boolean(r.is_public),
     created_at: r.created,
     updated_at: r.updated,
   };
@@ -152,6 +155,16 @@ export async function listRemoteProjects(): Promise<RemoteProjectRow[]> {
   }
 }
 
+// PocketBase rejects every custom record id (its default schema validates id
+// length / charset and treats the id field as system-generated). So our flow:
+//   - If the snapshot's id looks like a PB-generated id (15 chars, lowercase
+//     alphanumeric), try UPDATE; otherwise we know it's a stale UUID.
+//   - On 404 (record not yet on the server) OR a non-PB-shaped id, CREATE
+//     without supplying an id and return the row. The caller then migrates
+//     the local copy to use PB's generated id so we never push the same
+//     project twice.
+const PB_ID_RE = /^[a-z0-9]{15}$/;
+
 export async function saveRemoteProject(
   snapshot: ProjectSnapshot,
 ): Promise<RemoteProjectRow | null> {
@@ -159,33 +172,36 @@ export async function saveRemoteProject(
   const userId = pb.authStore.model?.id;
   if (!userId) return null;
 
-  const payload = {
-    id: snapshot.id,
+  const body = {
     owner: userId,
     name: snapshot.name,
     snapshot,
   };
 
-  try {
-    // Try update first; if 404 (record doesn't exist yet) fall back to
-    // create. Cheaper than the alternative two-call check.
-    const updated = await pb
-      .collection('projects')
-      .update<PbProjectRecord>(snapshot.id, payload);
-    return recordToProject(updated);
-  } catch (e) {
-    if (e instanceof ClientResponseError && e.status === 404) {
-      try {
-        const created = await pb
-          .collection('projects')
-          .create<PbProjectRecord>(payload);
-        return recordToProject(created);
-      } catch (createErr) {
-        console.warn('saveRemoteProject create failed', createErr);
+  // 1) If the id has PB shape, attempt an update first.
+  if (PB_ID_RE.test(snapshot.id)) {
+    try {
+      const updated = await pb
+        .collection('projects')
+        .update<PbProjectRecord>(snapshot.id, body);
+      return recordToProject(updated);
+    } catch (e) {
+      if (!(e instanceof ClientResponseError) || e.status !== 404) {
+        console.warn('saveRemoteProject update failed', e);
         return null;
       }
+      // 404 → fall through to create.
     }
-    console.warn('saveRemoteProject failed', e);
+  }
+
+  // 2) Create with PB-generated id.
+  try {
+    const created = await pb
+      .collection('projects')
+      .create<PbProjectRecord>(body);
+    return recordToProject(created);
+  } catch (e) {
+    console.warn('saveRemoteProject create failed', e);
     return null;
   }
 }
@@ -199,6 +215,46 @@ export async function deleteRemoteProject(id: string): Promise<boolean> {
     if (e instanceof ClientResponseError && e.status === 404) return true;
     console.warn('deleteRemoteProject failed', e);
     return false;
+  }
+}
+
+export async function setProjectPublic(
+  id: string,
+  isPublic: boolean,
+): Promise<boolean> {
+  if (!pb || !pb.authStore.isValid) return false;
+  try {
+    await pb.collection('projects').update(id, { is_public: isPublic });
+    return true;
+  } catch (e) {
+    console.warn('setProjectPublic failed', e);
+    return false;
+  }
+}
+
+// Public library — any signed-in user can read every project where
+// is_public = true. Returns rows including the owner display name so the
+// library UI can show who shared each project.
+export async function listPublicProjects(): Promise<
+  Array<RemoteProjectRow & { owner_display_name: string | null }>
+> {
+  if (!pb || !pb.authStore.isValid) return [];
+  try {
+    const records = await pb
+      .collection('projects')
+      .getFullList<PbProjectRecord>({
+        sort: '-updated',
+        expand: 'owner',
+        filter: 'is_public = true',
+      });
+    return records.map((r) => ({
+      ...recordToProject(r),
+      owner_display_name:
+        r.expand?.owner?.name ?? r.expand?.owner?.email ?? null,
+    }));
+  } catch (e) {
+    console.warn('listPublicProjects failed', e);
+    return [];
   }
 }
 
@@ -223,6 +279,12 @@ export async function listAllProjectsAdmin(): Promise<
     return [];
   }
 }
+
+// Friendly alias to match the file's pattern.
+type RemoteProjectWithOwner = RemoteProjectRow & {
+  owner_display_name: string | null;
+};
+export type { RemoteProjectWithOwner };
 
 // ---------- helpers ----------
 

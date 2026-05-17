@@ -12,6 +12,7 @@ export interface ProjectSnapshot {
   name: string;
   createdAt: number;
   updatedAt: number;
+  isPublic?: boolean;
   mode: Mode;
   stitch: {
     climbs: Climb[];
@@ -97,6 +98,26 @@ function saveProjects(list: ProjectSnapshot[]) {
   }
 }
 
+// Group projects by name and keep only the most-recently-updated entry per
+// name. Used to clean up duplicates that earlier broken sync passes wrote
+// into localStorage. Returns the deduped list AND mutates storage when
+// duplicates were removed.
+export function dedupeLocalProjects(): {
+  kept: ProjectSnapshot[];
+  removed: number;
+} {
+  const all = listProjects();
+  const byName = new globalThis.Map<string, ProjectSnapshot>();
+  for (const p of all) {
+    const existing = byName.get(p.name);
+    if (!existing || p.updatedAt > existing.updatedAt) byName.set(p.name, p);
+  }
+  const kept = Array.from(byName.values());
+  const removed = all.length - kept.length;
+  if (removed > 0) saveProjects(kept);
+  return { kept, removed };
+}
+
 export function saveProject(p: ProjectSnapshot) {
   const list = listProjects();
   const idx = list.findIndex((x) => x.id === p.id);
@@ -108,6 +129,18 @@ export function saveProject(p: ProjectSnapshot) {
 
 export function deleteProject(id: string) {
   saveProjects(listProjects().filter((p) => p.id !== id));
+}
+
+// Wipe every saved project + the autosaved working set from localStorage.
+// Used after a successful sync to keep PocketBase as the sole source of truth.
+// On next sign-in, the reconcile pulls remote → local and the cache rebuilds.
+export function clearAllLocalProjects(): void {
+  try {
+    localStorage.removeItem(KEY_PROJECTS);
+    localStorage.removeItem(KEY_WORKING);
+  } catch (e) {
+    console.warn('clearAllLocalProjects failed', e);
+  }
 }
 
 // Make a deep-cloned copy of `source` with a new id, the supplied name, and

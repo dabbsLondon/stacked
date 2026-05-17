@@ -266,3 +266,29 @@ export function bucketColor(b: Bucket): string {
 export function bucketLineColor(b: Bucket): string {
   return b.kind === 'bridge' ? BRIDGE_LINE_COLOR : lineColor(b.gradient);
 }
+
+// Climb difficulty category — shared between the admin/library view and any
+// summary widgets that show per-project distribution.
+export type ClimbCategory = 'epic' | 'steep' | 'long' | 'mild';
+
+export function categorizeClimb(
+  distanceKm: number,
+  maxGradient: number,
+  ascentM: number,
+): ClimbCategory {
+  if (maxGradient >= 15) return 'epic'; // wall-style steep ramp
+  if (maxGradient >= 12 && ascentM >= 150) return 'epic'; // brutal short climbs
+  if (distanceKm >= 5 && maxGradient >= 12) return 'epic'; // sustained brutal
+  if (ascentM >= 500) return 'epic'; // serious vertical regardless of grade
+  if (distanceKm >= 10 && maxGradient >= 8) return 'epic'; // marathon climbs
+  if (maxGradient >= 10) return 'steep';
+  if (distanceKm >= 5) return 'long';
+  return 'mild';
+}
+
+export const CATEGORY_COLORS: Record<ClimbCategory, string> = {
+  epic: '#dc2626',
+  steep: '#f97316',
+  long: '#facc15',
+  mild: '#5eead4',
+};

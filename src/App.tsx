@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Bridge, Climb, CutSource, Mode, Slice } from './types';
 import { parseGpx, writeGpx } from './engine/gpx';
 import { buildStitch } from './engine/stitch';
@@ -22,12 +22,17 @@ import { useAuth } from './hooks/useAuth';
 import {
   BACKEND_ENABLED,
   deleteRemoteProject,
+  listAllProjectsAdmin,
+  listPublicProjects,
   listRemoteProjects,
   saveRemoteProject,
+  setProjectPublic,
   signOut,
 } from './engine/backend';
 import {
   DEFAULT_BRIDGE,
+  clearAllLocalProjects,
+  dedupeLocalProjects,
   deleteProject,
   duplicateProject,
   emptySnapshot,
@@ -53,7 +58,7 @@ export default function App() {
   // View: 'home' (project picker) or 'editor' (working area).
   const initialHasData =
     initial.stitch.climbs.length > 0 || initial.cut.sources.length > 0;
-  const [view, setView] = useState<'home' | 'editor' | 'admin'>(
+  const [view, setView] = useState<'home' | 'editor' | 'admin' | 'library'>(
     initialHasData ? 'editor' : 'home',
   );
 
@@ -198,6 +203,17 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentKey]);
 
+  // (autosave to PocketBase intentionally removed — it was racing with
+  // React 18 Strict Mode and creating duplicate records. Explicit Save
+  // and the 🔄 SYNC button are what write to PB now.)
+
+  // On sign-in, always return to the project dashboard. Avoids landing the
+  // user in mid-edit on an autosaved working set when they just wanted to
+  // pick a project from their list.
+  useEffect(() => {
+    if (auth.kind === 'signed-in') setView('home');
+  }, [auth.kind]);
+
   function loadSnapshot(p: ProjectSnapshot) {
     setProjectId(p.id);
     setProjectName(p.name);
@@ -274,6 +290,27 @@ export default function App() {
     }
   }
 
+  async function handleTogglePublic(project: ProjectSnapshot) {
+    if (auth.kind !== 'signed-in') {
+      alert('Sign in to publish projects.');
+      return;
+    }
+    const nextPublic = !project.isPublic;
+    // Optimistic local update — also reflected back to PB.
+    const updated: ProjectSnapshot = { ...project, isPublic: nextPublic };
+    saveProject(updated);
+    setSavedProjects(listProjects());
+    const ok = await setProjectPublic(project.id, nextPublic);
+    if (!ok) {
+      // Revert if the server refused (e.g., not owner).
+      saveProject({ ...project, isPublic: project.isPublic ?? false });
+      setSavedProjects(listProjects());
+      alert(
+        'Could not change visibility. Make sure this project has been synced.',
+      );
+    }
+  }
+
   function handleDuplicate(source: ProjectSnapshot) {
     const proposed = `${source.name} (copy)`;
     const name = prompt('Duplicate as:', proposed);
@@ -288,18 +325,43 @@ export default function App() {
     setView('editor');
   }
 
-  // One-time reconciliation: on sign-in, pull every remote project into local
-  // storage (newer-wins) and push any local-only projects up. After this the
-  // local copy mirrors the remote and subsequent save/delete just write
-  // through to both.
-  useEffect(() => {
-    if (!BACKEND_ENABLED) return;
-    if (auth.kind !== 'signed-in') return;
-    let cancelled = false;
+  // Reconcile local ↔ remote: push any local-only projects up, pull newer
+  // remote projects down. Triggered on sign-in AND exposed via a manual
+  // "sync" button so users can re-run it whenever local + remote drift.
+  const [syncing, setSyncing] = useState(false);
+  const [syncMessage, setSyncMessage] = useState<string | null>(null);
 
-    async function reconcile() {
-      const remote = await listRemoteProjects();
+  async function purgeLocalCache(): Promise<void> {
+    if (auth.kind !== 'signed-in') {
+      alert("Sign in first — PocketBase needs to have your projects before we can safely wipe the local cache.");
+      return;
+    }
+    // Belt-and-braces: push everything up before deleting locally.
+    await reconcileWithRemote();
+    if (!confirm("Wipe every project + working set from this browser's localStorage? PocketBase keeps them — they'll re-download on the next sync.")) {
+      return;
+    }
+    clearAllLocalProjects();
+    // Re-pull from PB so the home grid stays accurate.
+    await reconcileWithRemote();
+    setSyncMessage('local cache wiped — projects live in PocketBase now');
+  }
+
+  async function reconcileWithRemote(): Promise<void> {
+    if (!BACKEND_ENABLED || auth.kind !== 'signed-in') return;
+    setSyncing(true);
+    setSyncMessage(null);
+    try {
+      // Step 1: dedupe local by name (earlier broken sync passes wrote
+      // multiple entries per project — collapse them to the newest before
+      // pushing anything up).
+      const { removed } = dedupeLocalProjects();
       const local = listProjects();
+      console.log('[sync] local projects:', local.length, local.map((p) => p.name));
+      if (removed) console.log('[sync] removed', removed, 'local duplicates');
+      const remote = await listRemoteProjects();
+      console.log('[sync] remote projects:', remote.length, remote.map((r) => r.name));
+
       const remoteById = new globalThis.Map<string, typeof remote[number]>(
         remote.map((r) => [r.id, r]),
       );
@@ -307,30 +369,73 @@ export default function App() {
         local.map((p) => [p.id, p]),
       );
 
-      // Local-only → push up.
+      let pushed = 0;
+      let pulled = 0;
+      const failures: string[] = [];
+
       for (const lp of local) {
         if (!remoteById.has(lp.id)) {
-          await saveRemoteProject(lp);
+          const row = await saveRemoteProject(lp);
+          if (row) {
+            pushed++;
+            // PB may have assigned a new id (when ours didn't pass its 15-char
+            // validation). Migrate the local copy to use the new id so future
+            // syncs match up.
+            if (row.id !== lp.id) {
+              deleteProject(lp.id);
+              const migrated = { ...lp, id: row.id };
+              saveProject(migrated);
+              if (lp.id === projectId) setProjectId(row.id);
+            }
+          } else {
+            failures.push(lp.name);
+            console.warn('[sync] failed to push', lp.id, lp.name);
+          }
         }
       }
-      // Remote-only or remote-newer → write down.
       for (const r of remote) {
         const lp = localById.get(r.id);
         const rTs = new Date(r.updated_at).getTime();
         if (!lp || rTs > lp.updatedAt) {
           saveProject(r.snapshot);
+          pulled++;
         } else if (lp.updatedAt > rTs) {
-          await saveRemoteProject(lp);
+          const row = await saveRemoteProject(lp);
+          if (row) pushed++;
         }
       }
-      if (cancelled) return;
       setSavedProjects(listProjects());
-    }
 
-    void reconcile();
-    return () => {
-      cancelled = true;
-    };
+      const parts: string[] = [];
+      if (removed) parts.push(`deduped ${removed} local`);
+      parts.push(`local ${local.length}`);
+      parts.push(`remote ${remote.length}`);
+      if (pushed) parts.push(`↑ ${pushed}`);
+      if (pulled) parts.push(`↓ ${pulled}`);
+      if (failures.length) parts.push(`✗ ${failures.length}`);
+      setSyncMessage(parts.join(' · '));
+    } catch (e) {
+      setSyncMessage(`sync failed: ${(e as Error).message}`);
+      console.warn('[sync] failed', e);
+    } finally {
+      setSyncing(false);
+    }
+  }
+
+  // Strict Mode re-runs effects in dev, which under the old code created
+  // duplicate PB records. Gate the on-sign-in reconcile with a ref so it
+  // runs at most once per signed-in session.
+  const reconciledForRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (auth.kind === 'signed-out') {
+      reconciledForRef.current = null;
+      return;
+    }
+    if (auth.kind !== 'signed-in') return;
+    if (reconciledForRef.current === auth.userId) return;
+    reconciledForRef.current = auth.userId;
+    void reconcileWithRemote();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [auth.kind]);
 
   function handleSaveCurrent() {
@@ -611,12 +716,34 @@ export default function App() {
     return <Login />;
   }
 
-  if (view === 'admin') {
+  if (view === 'admin' || view === 'library') {
+    const isAdminView = view === 'admin';
     return (
       <AdminView
+        title={
+          isAdminView ? 'Cut sources · all users' : 'Public library'
+        }
+        eyebrow={isAdminView ? '// ADMIN VIEW' : '// PUBLIC LIBRARY'}
+        emptyMessage={
+          isAdminView
+            ? 'no projects across the org yet'
+            : 'no public projects yet — publish one of yours from the home page to share it here'
+        }
+        fetcher={isAdminView ? listAllProjectsAdmin : listPublicProjects}
         onClose={() => setView('home')}
-        onPullSlice={(climb) => {
-          // Add the pulled climb as a new cut source and switch to cut mode.
+        onTogglePublic={
+          isAdminView
+            ? async (row, nextPublic) => {
+                const ok = await setProjectPublic(row.id, nextPublic);
+                if (!ok) {
+                  alert('Could not change visibility on that project.');
+                }
+              }
+            : undefined
+        }
+        onPullSource={(climb) => {
+          // Drop the whole long ride into the admin's cut workspace so they
+          // can slice it themselves.
           const id = crypto.randomUUID();
           const newSource = {
             id,
@@ -627,6 +754,13 @@ export default function App() {
           setActiveSourceId(id);
           setActiveSliceId(null);
           setMode('cut');
+          setView('editor');
+        }}
+        onPullClimb={(climb) => {
+          // Add this pre-cut climb to the admin's splicer climbs list.
+          const stamped: Climb = { ...climb, id: crypto.randomUUID() };
+          setClimbs((cs) => [...cs, stamped]);
+          setMode('stitch');
           setView('editor');
         }}
       />
@@ -651,6 +785,22 @@ export default function App() {
           await signOut();
         }}
         onOpenAdmin={() => setView('admin')}
+        onOpenLibrary={
+          auth.kind === 'signed-in' ? () => setView('library') : undefined
+        }
+        onTogglePublic={
+          auth.kind === 'signed-in'
+            ? (p) => void handleTogglePublic(p)
+            : undefined
+        }
+        onSync={
+          auth.kind === 'signed-in' ? () => void reconcileWithRemote() : undefined
+        }
+        onPurgeLocal={
+          auth.kind === 'signed-in' ? () => void purgeLocalCache() : undefined
+        }
+        syncing={syncing}
+        syncMessage={syncMessage}
       />
     );
   }

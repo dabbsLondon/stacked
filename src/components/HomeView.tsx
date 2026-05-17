@@ -16,6 +16,12 @@ interface Props {
   profile: Profile | null;
   onSignOut: () => void;
   onOpenAdmin: () => void;
+  onSync?: () => void;
+  onPurgeLocal?: () => void;
+  syncing?: boolean;
+  syncMessage?: string | null;
+  onOpenLibrary?: () => void;
+  onTogglePublic?: (p: ProjectSnapshot) => void;
 }
 
 export function HomeView({
@@ -32,6 +38,12 @@ export function HomeView({
   profile,
   onSignOut,
   onOpenAdmin,
+  onSync,
+  onPurgeLocal,
+  syncing,
+  syncMessage,
+  onOpenLibrary,
+  onTogglePublic,
 }: Props) {
   const sorted = [...projects].sort((a, b) => b.updatedAt - a.updatedAt);
 
@@ -60,6 +72,35 @@ export function HomeView({
         </div>
         {profile ? (
           <div className="home-nav-right">
+            {onSync && (
+              <button
+                className="home-nav-sync-btn"
+                onClick={onSync}
+                disabled={syncing}
+                title={syncMessage ?? 'push local projects to PocketBase / pull remote down'}
+              >
+                {syncing ? '⏳ SYNCING…' : '🔄 SYNC'}
+              </button>
+            )}
+            {onPurgeLocal && (
+              <button
+                className="home-nav-purge-btn"
+                onClick={onPurgeLocal}
+                disabled={syncing}
+                title="push everything to PocketBase, then wipe localStorage"
+              >
+                🚮 PURGE LOCAL
+              </button>
+            )}
+            {onOpenLibrary && (
+              <button
+                className="home-nav-library-btn"
+                onClick={onOpenLibrary}
+                title="browse public projects shared by anyone"
+              >
+                📚 LIBRARY
+              </button>
+            )}
             {profile.role === 'admin' && (
               <button
                 className="home-nav-admin-btn"
@@ -94,6 +135,11 @@ export function HomeView({
         )}
       </nav>
       <div className="home">
+      {syncMessage && (
+        <div className="home-sync-banner mono">
+          {syncing ? '⏳ ' : '🔄 '}sync — {syncMessage}
+        </div>
+      )}
       <header className="home-hero">
         <div className="home-hero-bg" aria-hidden="true">
           <svg
@@ -243,6 +289,9 @@ export function HomeView({
                 project={p}
                 onOpen={() => onOpen(p)}
                 onDuplicate={() => onDuplicate(p)}
+                onTogglePublic={
+                  onTogglePublic ? () => onTogglePublic(p) : undefined
+                }
                 onDelete={() => {
                   if (confirm(`Delete "${p.name}"?`)) onDelete(p.id);
                 }}
@@ -321,11 +370,13 @@ function ProjectCard({
   project,
   onOpen,
   onDuplicate,
+  onTogglePublic,
   onDelete,
 }: {
   project: ProjectSnapshot;
   onOpen: () => void;
   onDuplicate: () => void;
+  onTogglePublic?: () => void;
   onDelete: () => void;
 }) {
   const climbCount = project.stitch.climbs.length;
@@ -347,8 +398,33 @@ function ProjectCard({
   return (
     <article className="project-card" onClick={onOpen}>
       <header className="project-card-head">
-        <h3 className="project-card-name">{project.name}</h3>
+        <h3 className="project-card-name">
+          {project.name}
+          {project.isPublic && (
+            <span className="project-card-public" title="public — in the library">
+              🌐 public
+            </span>
+          )}
+        </h3>
         <div className="project-card-actions">
+          {onTogglePublic && (
+            <button
+              className={`project-card-action ${
+                project.isPublic ? 'project-card-publicactive' : ''
+              }`}
+              onClick={(e) => {
+                e.stopPropagation();
+                onTogglePublic();
+              }}
+              title={
+                project.isPublic
+                  ? 'unpublish (remove from library)'
+                  : 'publish to the public library'
+              }
+            >
+              {project.isPublic ? '🌐' : '🔒'}
+            </button>
+          )}
           <button
             className="project-card-action"
             onClick={(e) => {

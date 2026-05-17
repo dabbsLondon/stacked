@@ -126,11 +126,26 @@ npm run preview      # serve the production build locally
 
 ### Deploy
 
-Push to `main` and the GitHub Actions workflow at
-[`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) builds and
-publishes to GitHub Pages automatically. Full step-by-step (Pages setup,
-Supabase project + schema, custom domain, alternative hosts):
-[`docs/DEPLOY.md`](docs/DEPLOY.md).
+Manual deploy to your own host. PocketBase serves both the SPA and the
+API from one binary on one port. Full step-by-step + systemd / launchd
+service files in [`docs/DEPLOY.md`](docs/DEPLOY.md).
+
+---
+
+## Sibling project · Stacked Ride
+
+Stacked is the route-builder. The companion app that lets you actually
+**ride** those routes — a desktop turbo-trainer client with live BLE/ANT+
+telemetry, 3D course rendering and Strava upload — is being designed
+under the name **Stacked Ride**.
+
+Design spec:
+[`docs/stacked-ride/plan.html`](docs/stacked-ride/plan.html). Open in a
+browser; it's themed to match this repo's own `plan.html`.
+
+Stacked Ride ships from its own repo (`dabbsLondon/stacked-ride`) when
+work starts, but reads routes from this project's PocketBase and writes
+rides back to it. Same users, same auth, same library.
 
 ### Test
 

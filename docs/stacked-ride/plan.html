@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>STACKED RIDE · the plan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+:root{
+  --bg:#0a0a0c;--bg-2:#111114;--surface:#16161a;--surface-2:#1d1d22;
+  --border:#2a2a2e;--border-hi:#3a3a40;
+  --text:#f5f5f7;--text-2:#b8b8bd;--text-3:#75757b;
+  --orange:#ff5f1f;--orange-2:#ffae87;--yellow:#fff200;--teal:#5eead4;--pink:#ff4d8d;
+  --indigo:#818cf8;--sky:#7dd3fc;
+}
+body{background:var(--bg);color:var(--text);font:400 17px/1.6 'Inter',-apple-system,sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif;letter-spacing:-.02em;line-height:1.05;font-weight:700}
+.mono{font-family:'JetBrains Mono',monospace}
+em{font-style:normal;color:var(--yellow)}
+strong{color:var(--text)}
+.eyebrow{color:var(--orange);font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:500;text-transform:uppercase;letter-spacing:.18em;margin-bottom:18px}
+.container{max-width:1180px;margin:0 auto;padding:0 36px}
+section{padding:140px 0;position:relative}
+section + section{border-top:1px solid var(--border)}
+.section-title{font-size:clamp(40px,5.5vw,76px);margin-bottom:28px;letter-spacing:-.03em}
+.section-intro{font-size:19px;color:var(--text-2);max-width:760px;margin-bottom:64px;line-height:1.55}
+
+.topbar{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;justify-content:space-between;align-items:center;padding:18px 36px;background:rgba(10,10,12,.72);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
+.brand{font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:700;letter-spacing:.04em}
+.brand .dot{color:var(--orange)}
+.toc{display:flex;gap:26px;font-family:'JetBrains Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:.14em}
+.toc a{color:var(--text-3);text-decoration:none;transition:color .15s}
+.toc a:hover{color:var(--text)}
+@media (max-width:780px){.toc{display:none}}
+
+.hero{min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;position:relative;overflow:hidden;padding-top:100px;border:none!important}
+.hero-bg{position:absolute;inset:0;z-index:0;pointer-events:none;display:flex;align-items:flex-end;opacity:.55}
+.hero-bg svg{width:100%;height:auto;display:block}
+.hero-mask{position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(180deg,var(--bg) 0%,transparent 28%,transparent 70%,var(--bg) 100%)}
+.hero-content{position:relative;z-index:2}
+.hero-badge{display:inline-flex;align-items:center;gap:10px;padding:8px 18px;border:1px solid var(--border-hi);border-radius:999px;background:rgba(20,20,22,.6);color:var(--indigo);font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.18em;margin-bottom:40px;backdrop-filter:blur(8px)}
+.hero-badge::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--indigo);box-shadow:0 0 12px var(--indigo);animation:pulse 2.4s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.85)}}
+.hero h1{font-size:clamp(72px,17vw,240px);background:linear-gradient(180deg,#fff 0%,#bae6fd 35%,var(--indigo) 75%,var(--orange) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-weight:700;letter-spacing:-.05em;line-height:.9}
+.hero-tagline{font-size:clamp(20px,2.4vw,28px);color:var(--text-2);margin:28px auto 0;max-width:720px;font-weight:400;line-height:1.35}
+.hero-cta{margin-top:56px;display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:10px;padding:14px 26px;border-radius:999px;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:500;text-transform:uppercase;letter-spacing:.14em;text-decoration:none;cursor:pointer;transition:all .2s;border:1px solid var(--border-hi);color:var(--text);background:var(--surface)}
+.btn.primary{background:var(--indigo);border-color:var(--indigo);color:#0a0a0c}
+.btn:hover{transform:translateY(-1px);border-color:var(--indigo)}
+.scroll-hint{position:absolute;bottom:38px;left:50%;transform:translateX(-50%);font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text-3);text-transform:uppercase;letter-spacing:.3em;z-index:2;animation:drift 2s ease-in-out infinite}
+@keyframes drift{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(6px)}}
+
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:56px}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;transition:border-color .2s}
+.stat:hover{border-color:var(--indigo)}
+.stat-label{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-3);text-transform:uppercase;letter-spacing:.16em;margin-bottom:12px}
+.stat-value{font-family:'Space Grotesk',sans-serif;font-size:32px;font-weight:700;color:var(--yellow);letter-spacing:-.02em;line-height:1}
+.stat-sub{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text-3);text-transform:uppercase;letter-spacing:.16em;margin-top:8px}
+
+.step{display:grid;grid-template-columns:1fr 1.2fr;gap:80px;align-items:center;margin-bottom:100px}
+.step:last-child{margin-bottom:0}
+.step.reverse{grid-template-columns:1.2fr 1fr}
+.step.reverse .step-text{order:2}
+.step.reverse .step-figure{order:1}
+.step-num{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--indigo);letter-spacing:.2em;margin-bottom:16px}
+.step-title{font-size:clamp(28px,3.4vw,42px);margin-bottom:20px}
+.step-desc{color:var(--text-2);font-size:17px;line-height:1.65}
+.step-desc + .step-desc{margin-top:14px}
+.step-figure{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:32px;aspect-ratio:4/3;display:flex;align-items:center;justify-content:center}
+.step-figure svg{width:100%;height:100%}
+@media (max-width:900px){.step,.step.reverse{grid-template-columns:1fr;gap:30px}.step.reverse .step-text{order:1}.step.reverse .step-figure{order:2}}
+
+.stack-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-top:40px}
+.stack-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:26px;transition:border-color .2s}
+.stack-card:hover{border-color:var(--indigo)}
+.stack-card-label{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--indigo);text-transform:uppercase;letter-spacing:.16em;margin-bottom:12px}
+.stack-card-title{font-family:'Space Grotesk',sans-serif;font-size:22px;font-weight:700;margin-bottom:10px}
+.stack-card-desc{font-size:14px;color:var(--text-2);line-height:1.55}
+.tech-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}
+.tag{font-family:'JetBrains Mono',monospace;font-size:11px;padding:4px 10px;background:var(--bg-2);border:1px solid var(--border);border-radius:6px;color:var(--text-2)}
+
+.timeline{position:relative;padding-left:60px;margin-top:40px}
+.timeline::before{content:'';position:absolute;left:22px;top:14px;bottom:14px;width:2px;background:linear-gradient(180deg,var(--indigo) 0%,var(--yellow) 50%,var(--orange) 100%)}
+.milestone{position:relative;margin-bottom:28px;padding:26px 30px;background:var(--surface);border:1px solid var(--border);border-radius:14px;transition:all .2s}
+.milestone:hover{border-color:var(--indigo);transform:translateX(4px)}
+.milestone::before{content:'';position:absolute;left:-47px;top:32px;width:14px;height:14px;border-radius:50%;background:var(--bg);border:3px solid var(--indigo);box-shadow:0 0 0 4px var(--bg)}
+.milestone-num{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--indigo);letter-spacing:.2em;margin-bottom:10px}
+.milestone-title{font-family:'Space Grotesk',sans-serif;font-size:22px;font-weight:700;margin-bottom:8px}
+.milestone-desc{color:var(--text-2);font-size:15px;line-height:1.55}
+.milestone-meta{display:flex;gap:14px;margin-top:12px;flex-wrap:wrap}
+.milestone-meta span{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text-3);text-transform:uppercase;letter-spacing:.14em}
+.milestone-meta span::before{content:"→ ";color:var(--indigo)}
+@media (max-width:600px){.timeline{padding-left:36px}.timeline::before{left:12px}.milestone::before{left:-28px}}
+
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:40px}
+@media (max-width:780px){.two-col{grid-template-columns:1fr}}
+.context-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:30px}
+.context-card h3{font-size:24px;margin-bottom:12px}
+.context-card>p{color:var(--text-2);font-size:15px;line-height:1.6;margin-bottom:18px}
+.context-card ul{list-style:none;margin:0;padding:0}
+.context-card li{padding:14px 0;border-top:1px dashed var(--border);font-size:14px;color:var(--text-2);line-height:1.55}
+.context-card li:first-child{border-top:none;padding-top:0}
+.context-card li strong{display:block;color:var(--indigo);font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.14em;margin-bottom:4px}
+
+.compat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:14px;margin-top:40px}
+.compat{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:22px;transition:all .2s}
+.compat-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:6px}
+.compat-name{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:18px}
+.compat-tag{font-family:'JetBrains Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:.16em;padding:3px 8px;border-radius:4px;flex-shrink:0}
+.compat-tag.full{background:rgba(94,234,212,.15);color:var(--teal)}
+.compat-tag.partial{background:rgba(255,242,0,.15);color:var(--yellow)}
+.compat-tag.none{background:rgba(255,77,141,.15);color:var(--pink)}
+.compat-detail{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-3);margin-bottom:12px}
+.compat-desc{font-size:14px;color:var(--text-2);line-height:1.55}
+
+.next{background:linear-gradient(135deg,rgba(129,140,248,.08) 0%,transparent 60%);border:1px solid var(--indigo);border-radius:20px;padding:54px;margin-top:40px}
+.next h2{font-size:clamp(28px,3.5vw,40px);margin-bottom:14px}
+.next p{color:var(--text-2);font-size:16px;max-width:620px}
+.checklist{list-style:none;margin-top:34px}
+.checklist li{padding:18px 0;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:18px}
+.checklist li:last-child{border-bottom:none}
+.check-box{flex-shrink:0;width:22px;height:22px;border:2px solid var(--indigo);border-radius:6px}
+.check-num{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--indigo);flex-shrink:0;width:30px}
+.check-text{flex:1;font-size:16px;color:var(--text);line-height:1.4}
+.check-text small{display:block;color:var(--text-3);font-size:13px;margin-top:4px;font-weight:400}
+
+footer{padding:50px 0 80px;border-top:1px solid var(--border);text-align:center;color:var(--text-3);font-family:'JetBrains Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:.16em}
+
+.hl-orange{color:var(--orange)}.hl-yellow{color:var(--yellow)}.hl-teal{color:var(--teal)}.hl-indigo{color:var(--indigo)}.hl-sky{color:var(--sky)}
+</style>
+</head>
+<body>
+
+<nav class="topbar">
+  <div class="brand">STACKED RIDE<span class="dot">.</span></div>
+  <div class="toc">
+    <a href="#idea">idea</a>
+    <a href="#flow">flow</a>
+    <a href="#relate">stacked</a>
+    <a href="#tech">stack</a>
+    <a href="#hardware">hardware</a>
+    <a href="#schema">schema</a>
+    <a href="#roadmap">roadmap</a>
+    <a href="#risks">risks</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg">
+    <svg viewBox="0 0 1600 600" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="heroFill" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0%" stop-color="#818cf8" stop-opacity="0.6"/>
+          <stop offset="100%" stop-color="#818cf8" stop-opacity="0"/>
+        </linearGradient>
+      </defs>
+      <path d="M 0,500 L 80,490 L 160,440 L 240,300 L 320,400 L 380,420 L 460,350 L 540,120 L 640,300 L 720,360 L 800,400 L 880,330 L 960,40 L 1040,290 L 1120,380 L 1200,360 L 1260,260 L 1340,360 L 1420,420 L 1500,470 L 1600,490 L 1600,600 L 0,600 Z" fill="url(#heroFill)"/>
+      <path d="M 0,500 L 80,490 L 160,440 L 240,300 L 320,400 L 380,420 L 460,350 L 540,120 L 640,300 L 720,360 L 800,400 L 880,330 L 960,40 L 1040,290 L 1120,380 L 1200,360 L 1260,260 L 1340,360 L 1420,420 L 1500,470 L 1600,490" fill="none" stroke="#bae6fd" stroke-width="2"/>
+      <circle cx="540" cy="120" r="5" fill="#bae6fd"/>
+      <circle cx="960" cy="40" r="5" fill="#bae6fd"/>
+      <circle cx="1260" cy="260" r="5" fill="#bae6fd"/>
+    </svg>
+  </div>
+  <div class="hero-mask"></div>
+  <div class="hero-content container">
+    <span class="hero-badge">design doc · desktop companion to STACKED</span>
+    <h1>STACKED RIDE</h1>
+    <p class="hero-tagline">Ride the routes you stacked. Native desktop app, BLE + ANT+ trainers.<br>Suffer in 3D. Record everything. <em>Race the leaderboard.</em></p>
+    <div class="hero-cta">
+      <a href="#flow" class="btn primary">How it works ↓</a>
+      <a href="#roadmap" class="btn">Roadmap</a>
+    </div>
+  </div>
+  <div class="scroll-hint">scroll</div>
+</section>
+
+<!-- IDEA -->
+<section id="idea">
+  <div class="container">
+    <div class="eyebrow">// the idea</div>
+    <h2 class="section-title">A virtual trainer.<br>Built for your stacked routes.</h2>
+    <p class="section-intro">
+      <strong>Stacked</strong> builds Frankenstein routes — climbs from across the country spliced into one ride. <strong>Stacked Ride</strong> is the companion that lets you actually ride them. Pull a route in, jump on the turbo, the trainer adjusts resistance to match the gradient under your virtual wheels, a low-poly bike + rider weaves through a 3D rendering of the course, and every watt, heartbeat, RPM and metre is recorded. At the end: a synthesised GPX/FIT you can post straight to Strava, plus a leaderboard against everyone else who's ridden the same stacked route.
+    </p>
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-label">runtime</div>
+        <div class="stat-value">Electron</div>
+        <div class="stat-sub">Win · Mac · Linux</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">target framerate</div>
+        <div class="stat-value">60 fps</div>
+        <div class="stat-sub">3D + physics</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">telemetry</div>
+        <div class="stat-value">BLE + ANT+</div>
+        <div class="stat-sub">trainers · HRM · power</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">output</div>
+        <div class="stat-value">FIT</div>
+        <div class="stat-sub">strava-ready</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FLOW -->
+<section id="flow">
+  <div class="container">
+    <div class="eyebrow">// the loop</div>
+    <h2 class="section-title">Telemetry in.<br>Position out. 60 times a second.</h2>
+    <p class="section-intro">
+      Three threads of the ride run continuously — a sensor loop pulling fresh power/HR/cadence values from BLE devices, a physics step turning power × gradient × CdA into a speed, and a renderer drawing the bike at its new position. A fourth thread records every sample to disk.
+    </p>
+
+    <!-- 01 SENSE -->
+    <div class="step">
+      <div class="step-text">
+        <div class="step-num">01 — SENSE</div>
+        <h3 class="step-title">Pair the trainer, HRM, power meter</h3>
+        <p class="step-desc">
+          On first launch the app asks for permission to talk to BLE devices — one at a time. Smart trainer (FTMS), heart rate monitor (HRS), optional separate power meter (CPS), optional cadence sensor (CSC). Each connection persists for the session; values stream in at 1–4 Hz.
+        </p>
+        <p class="step-desc">
+          The trainer is both an input (power, cadence, speed) and an output (target grade). Send the current slope of the road and a calibrated trainer adjusts the wheel resistance so you <em>feel</em> the climb.
+        </p>
+      </div>
+      <div class="step-figure">
+        <svg viewBox="0 0 480 360" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="ble1" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#818cf8" stop-opacity="0.7"/>
+              <stop offset="100%" stop-color="#818cf8" stop-opacity="0.05"/>
+            </linearGradient>
+          </defs>
+          <text x="16" y="22" font-family="JetBrains Mono" font-size="10" fill="#75757b" letter-spacing="2">BLE DEVICES</text>
+          <g transform="translate(40, 60)">
+            <rect width="120" height="60" rx="10" fill="url(#ble1)" stroke="#bae6fd" stroke-width="1.5"/>
+            <text x="60" y="34" font-family="JetBrains Mono" font-size="11" fill="#bae6fd" text-anchor="middle">TRAINER</text>
+            <text x="60" y="48" font-family="JetBrains Mono" font-size="8" fill="#75757b" text-anchor="middle">FTMS · in/out</text>
+          </g>
+          <g transform="translate(180, 60)">
+            <rect width="120" height="60" rx="10" fill="url(#ble1)" stroke="#bae6fd" stroke-width="1.5"/>
+            <text x="60" y="34" font-family="JetBrains Mono" font-size="11" fill="#ff4d8d" text-anchor="middle">HRM</text>
+            <text x="60" y="48" font-family="JetBrains Mono" font-size="8" fill="#75757b" text-anchor="middle">HRS · in</text>
+          </g>
+          <g transform="translate(320, 60)">
+            <rect width="120" height="60" rx="10" fill="url(#ble1)" stroke="#bae6fd" stroke-width="1.5"/>
+            <text x="60" y="34" font-family="JetBrains Mono" font-size="11" fill="#fff200" text-anchor="middle">POWER</text>
+            <text x="60" y="48" font-family="JetBrains Mono" font-size="8" fill="#75757b" text-anchor="middle">CPS · in</text>
+          </g>
+          <line x1="240" y1="160" x2="240" y2="190" stroke="#818cf8" stroke-width="1" stroke-dasharray="3,3"/>
+          <text x="240" y="180" font-family="JetBrains Mono" font-size="9" fill="#818cf8" text-anchor="middle">stream</text>
+          <g transform="translate(140, 200)">
+            <rect width="200" height="80" rx="10" fill="#0e0e11" stroke="#818cf8" stroke-width="1.5"/>
+            <text x="100" y="24" font-family="JetBrains Mono" font-size="9" fill="#818cf8" text-anchor="middle" letter-spacing="2">SENSOR LOOP</text>
+            <text x="100" y="46" font-family="Space Grotesk" font-size="14" fill="#f5f5f7" text-anchor="middle">power: 287 W</text>
+            <text x="100" y="62" font-family="Space Grotesk" font-size="12" fill="#ff4d8d" text-anchor="middle">hr: 152 bpm</text>
+            <text x="100" y="75" font-family="Space Grotesk" font-size="11" fill="#fff200" text-anchor="middle">cad: 88 rpm</text>
+          </g>
+          <line x1="240" y1="280" x2="240" y2="310" stroke="#818cf8" stroke-width="1" stroke-dasharray="3,3"/>
+          <text x="240" y="335" font-family="JetBrains Mono" font-size="10" fill="#75757b" text-anchor="middle">→ physics</text>
+        </svg>
+      </div>
+    </div>
+
+    <!-- 02 PHYSICS -->
+    <div class="step reverse">
+      <div class="step-text">
+        <div class="step-num">02 — PHYSICS</div>
+        <h3 class="step-title">Power × gradient → speed</h3>
+        <p class="step-desc">
+          Standard cycling math, run at 60Hz. Forces opposing motion: <span class="mono hl-indigo">rolling resistance + aero drag + gravity-on-slope</span>. Forces propelling: <span class="mono hl-yellow">rider power ÷ velocity</span>. Net force × <span class="mono">dt</span> updates velocity; velocity × <span class="mono">dt</span> updates position along the route.
+        </p>
+        <p class="step-desc">
+          Position is one number — distance along the GPX. Convert distance to a 3D coordinate by interpolating the route's polyline. Look up the local gradient at the current position and write it back to the trainer once a second.
+        </p>
+      </div>
+      <div class="step-figure">
+        <svg viewBox="0 0 480 360" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="phys1" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#818cf8" stop-opacity="0.7"/>
+              <stop offset="100%" stop-color="#818cf8" stop-opacity="0.05"/>
+            </linearGradient>
+          </defs>
+          <text x="16" y="22" font-family="JetBrains Mono" font-size="10" fill="#75757b" letter-spacing="2">FORCES</text>
+          <g transform="translate(40, 50)">
+            <rect width="180" height="44" rx="8" fill="url(#phys1)" stroke="#fff200" stroke-width="1.5"/>
+            <text x="14" y="20" font-family="JetBrains Mono" font-size="9" fill="#fff200">F_PROPEL</text>
+            <text x="14" y="36" font-family="Space Grotesk" font-size="12" fill="#f5f5f7">P / v · η_drive</text>
+          </g>
+          <g transform="translate(260, 50)">
+            <rect width="180" height="44" rx="8" fill="url(#phys1)" stroke="#ff4d8d" stroke-width="1.5"/>
+            <text x="14" y="20" font-family="JetBrains Mono" font-size="9" fill="#ff4d8d">F_GRAVITY</text>
+            <text x="14" y="36" font-family="Space Grotesk" font-size="12" fill="#f5f5f7">m · g · sin(θ)</text>
+          </g>
+          <g transform="translate(40, 110)">
+            <rect width="180" height="44" rx="8" fill="url(#phys1)" stroke="#ff4d8d" stroke-width="1.5"/>
+            <text x="14" y="20" font-family="JetBrains Mono" font-size="9" fill="#ff4d8d">F_DRAG</text>
+            <text x="14" y="36" font-family="Space Grotesk" font-size="12" fill="#f5f5f7">½ · ρ · CdA · v²</text>
+          </g>
+          <g transform="translate(260, 110)">
+            <rect width="180" height="44" rx="8" fill="url(#phys1)" stroke="#ff4d8d" stroke-width="1.5"/>
+            <text x="14" y="20" font-family="JetBrains Mono" font-size="9" fill="#ff4d8d">F_RR</text>
+            <text x="14" y="36" font-family="Space Grotesk" font-size="12" fill="#f5f5f7">Crr · m · g · cos(θ)</text>
+          </g>
+          <line x1="240" y1="175" x2="240" y2="200" stroke="#818cf8" stroke-width="1" stroke-dasharray="3,3"/>
+          <g transform="translate(120, 200)">
+            <rect width="240" height="56" rx="10" fill="#0e0e11" stroke="#818cf8" stroke-width="1.5"/>
+            <text x="120" y="24" font-family="JetBrains Mono" font-size="9" fill="#818cf8" text-anchor="middle" letter-spacing="2">INTEGRATE 60 HZ</text>
+            <text x="120" y="44" font-family="Space Grotesk" font-size="14" fill="#fff200" text-anchor="middle">v_t+1 = v + a · dt</text>
+          </g>
+          <line x1="240" y1="266" x2="240" y2="290" stroke="#818cf8" stroke-width="1" stroke-dasharray="3,3"/>
+          <text x="240" y="312" font-family="JetBrains Mono" font-size="10" fill="#75757b" text-anchor="middle">→ position along route</text>
+          <text x="240" y="328" font-family="JetBrains Mono" font-size="10" fill="#bae6fd" text-anchor="middle">→ grade back to trainer</text>
+        </svg>
+      </div>
+    </div>
+
+    <!-- 03 RENDER -->
+    <div class="step">
+      <div class="step-text">
+        <div class="step-num">03 — RENDER</div>
+        <h3 class="step-title">3D course, low-poly rider</h3>
+        <p class="step-desc">
+          Three.js scene reused from Stacked's 3D viewer. The route is a continuous ribbon — same geometry, just at ground level with proper texturing. A bike + rider <span class="mono">glTF</span> model sits on the path at the current position. Camera follows from behind-and-above; tilts with the gradient so the climbs <em>look</em> like climbs.
+        </p>
+        <p class="step-desc">
+          HUD overlay: current power, HR, cadence, speed, gradient %, distance, elapsed time, distance-to-summit. Configurable. Race-mode shows your ghost vs the leaderboard.
+        </p>
+      </div>
+      <div class="step-figure">
+        <svg viewBox="0 0 480 360" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <pattern id="ground" width="20" height="20" patternUnits="userSpaceOnUse">
+              <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#1d1d22" stroke-width="0.5"/>
+            </pattern>
+            <linearGradient id="path3d" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#818cf8" stop-opacity="0.8"/>
+              <stop offset="100%" stop-color="#818cf8" stop-opacity="0.1"/>
+            </linearGradient>
+          </defs>
+          <rect width="480" height="360" fill="url(#ground)"/>
+          <path d="M 40,300 Q 120,260 200,220 Q 280,180 360,140 L 460,100" fill="none" stroke="url(#path3d)" stroke-width="40" stroke-linecap="round"/>
+          <path d="M 40,300 Q 120,260 200,220 Q 280,180 360,140 L 460,100" fill="none" stroke="#bae6fd" stroke-width="2" stroke-linecap="round"/>
+          <g transform="translate(190, 200)">
+            <ellipse cx="0" cy="20" rx="22" ry="5" fill="rgba(0,0,0,0.5)"/>
+            <circle cx="-12" cy="8" r="7" fill="#16161a" stroke="#5eead4" stroke-width="1.5"/>
+            <circle cx="12" cy="8" r="7" fill="#16161a" stroke="#5eead4" stroke-width="1.5"/>
+            <path d="M -10,8 L -2,-4 L 8,-4 L 12,8" fill="none" stroke="#fff200" stroke-width="2"/>
+            <path d="M -2,-4 L -4,-16 M 8,-4 L 10,-16" stroke="#f5f5f7" stroke-width="1.5"/>
+            <circle cx="3" cy="-20" r="4" fill="#ff5f1f"/>
+          </g>
+          <g transform="translate(20, 20)">
+            <rect width="180" height="64" rx="6" fill="rgba(20,20,22,0.92)" stroke="#2a2a2e"/>
+            <text x="10" y="20" font-family="JetBrains Mono" font-size="9" fill="#818cf8" letter-spacing="2">HUD</text>
+            <text x="10" y="38" font-family="Space Grotesk" font-size="14" fill="#fff200" font-weight="700">287 w · 88 rpm</text>
+            <text x="10" y="56" font-family="Space Grotesk" font-size="12" fill="#ff4d8d">152 bpm · 8.2%</text>
+          </g>
+        </svg>
+      </div>
+    </div>
+
+    <!-- 04 RECORD -->
+    <div class="step reverse">
+      <div class="step-text">
+        <div class="step-num">04 — RECORD</div>
+        <h3 class="step-title">Save the ride. Export to Strava.</h3>
+        <p class="step-desc">
+          Every sample (~1 Hz) is appended to an in-memory buffer: <span class="mono">timestamp, lat, lon, ele, dist, power, hr, cad, speed, gradient</span>. On finish, encode as a FIT file using <span class="mono">fit-encoder</span> and offer download. If the user has linked Strava (OAuth2), one-click upload.
+        </p>
+        <p class="step-desc">
+          The ride summary saves to PocketBase: time, ascent, normalized power, average HR, segments. Feeds the leaderboard for that route + the rider's personal history.
+        </p>
+      </div>
+      <div class="step-figure">
+        <svg viewBox="0 0 480 360" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="rec1" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#fc4c02" stop-opacity="0.8"/>
+              <stop offset="100%" stop-color="#fc4c02" stop-opacity="0.1"/>
+            </linearGradient>
+          </defs>
+          <text x="16" y="22" font-family="JetBrains Mono" font-size="10" fill="#75757b" letter-spacing="2">DURING THE RIDE</text>
+          <g transform="translate(20, 40)">
+            <rect width="200" height="80" rx="8" fill="#0e0e11" stroke="#2a2a2e"/>
+            <text x="14" y="20" font-family="JetBrains Mono" font-size="9" fill="#818cf8">SAMPLE BUFFER · 1 Hz</text>
+            <text x="14" y="38" font-family="JetBrains Mono" font-size="9" fill="#b8b8bd">t=00:43  287w  152bpm</text>
+            <text x="14" y="52" font-family="JetBrains Mono" font-size="9" fill="#b8b8bd">t=00:44  291w  153bpm</text>
+            <text x="14" y="66" font-family="JetBrains Mono" font-size="9" fill="#b8b8bd">t=00:45  285w  154bpm</text>
+          </g>
+          <line x1="240" y1="80" x2="270" y2="80" stroke="#818cf8" stroke-width="2"/>
+          <text x="255" y="74" font-family="JetBrains Mono" font-size="8" fill="#818cf8" text-anchor="middle">encode</text>
+          <g transform="translate(280, 40)">
+            <rect width="180" height="80" rx="8" fill="url(#rec1)" stroke="#fc4c02" stroke-width="1.5"/>
+            <text x="14" y="22" font-family="JetBrains Mono" font-size="9" fill="#fc4c02">RIDE.FIT</text>
+            <text x="14" y="42" font-family="Space Grotesk" font-size="14" fill="#f5f5f7">23.4 km</text>
+            <text x="14" y="58" font-family="Space Grotesk" font-size="12" fill="#fff200">+ 850 m · 1h 12m</text>
+            <text x="14" y="72" font-family="JetBrains Mono" font-size="9" fill="#b8b8bd">NP 248w · avg HR 148</text>
+          </g>
+          <text x="16" y="170" font-family="JetBrains Mono" font-size="10" fill="#75757b" letter-spacing="2">AFTER</text>
+          <g transform="translate(20, 190)">
+            <rect width="200" height="60" rx="8" fill="#0e0e11" stroke="#fc4c02"/>
+            <text x="100" y="22" font-family="JetBrains Mono" font-size="9" fill="#fc4c02" text-anchor="middle">STRAVA UPLOAD</text>
+            <text x="100" y="44" font-family="JetBrains Mono" font-size="9" fill="#b8b8bd" text-anchor="middle">POST /uploads</text>
+          </g>
+          <g transform="translate(240, 190)">
+            <rect width="220" height="60" rx="8" fill="#0e0e11" stroke="#5eead4"/>
+            <text x="110" y="22" font-family="JetBrains Mono" font-size="9" fill="#5eead4" text-anchor="middle">POCKETBASE · rides</text>
+            <text x="110" y="44" font-family="JetBrains Mono" font-size="9" fill="#b8b8bd" text-anchor="middle">leaderboards · history</text>
+          </g>
+          <text x="240" y="296" font-family="JetBrains Mono" font-size="9" fill="#75757b" text-anchor="middle">→ next ride ranks against the field</text>
+        </svg>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- RELATIONSHIP -->
+<section id="relate">
+  <div class="container">
+    <div class="eyebrow">// the relationship</div>
+    <h2 class="section-title">Stacked builds routes.<br>Stacked Ride consumes them.</h2>
+    <p class="section-intro">
+      Two repos, one PocketBase, one user-facing app each. Stacked is the browser app — compose climbs anywhere with a Chromium tab. Stacked Ride is the desktop app — installed on the laptop next to the turbo, paired with the trainer, used for the actual ride. Both talk to the same backend, share the same user accounts, and pass GPX routes one way and recorded rides the other.
+    </p>
+    <div class="two-col">
+      <div class="context-card">
+        <h3>What Stacked Ride pulls from Stacked</h3>
+        <p>The route is the input. Stacked Ride doesn't compose, edit, or cut — that's all done upstream.</p>
+        <ul>
+          <li><strong>routes (read)</strong>A project's stitched GPX (climbs + bridges) loaded over the existing PocketBase <em>projects</em> collection. The public/library filtering applies — riders can race any public route, only their own private ones.</li>
+          <li><strong>climbs metadata (read)</strong>Per-climb names, distances, gradients — straight from <em>snapshot.stitch.climbs</em>. Used to label the HUD ("Climbing: Hardknott · 2.1km · 14.3%") and to time segments for the leaderboard.</li>
+          <li><strong>auth (shared)</strong>Same PB users, same magic role flag. Sign-in carries across both apps. An admin in Stacked is an admin in Ride.</li>
+        </ul>
+      </div>
+      <div class="context-card">
+        <h3>What Stacked Ride writes back</h3>
+        <p>The output is a permanent record of every ride, attributable to a route.</p>
+        <ul>
+          <li><strong>rides (write)</strong>New PB collection. One row per completed ride. Columns: <em>route_id</em>, <em>rider_id</em>, <em>summary</em> (time, ascent, NP, avg HR), <em>samples</em> (compressed second-by-second telemetry), <em>fit_blob</em> (optional, stored in PB Storage).</li>
+          <li><strong>segment times (derived)</strong>Per-climb times sliced out of the ride samples. Powers the leaderboard.</li>
+          <li><strong>strava (out)</strong>Optional. If a user has connected Strava, a successful ride POSTs the FIT to <em>/api/v3/uploads</em>.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- STACK -->
+<section id="tech">
+  <div class="container">
+    <div class="eyebrow">// the stack</div>
+    <h2 class="section-title">Same skeleton as Stacked.<br>3D + BLE on top.</h2>
+    <p class="section-intro">
+      Almost all the foundation is reuse: React + Vite + TypeScript, PocketBase backend, Three.js. The new pieces are device IO (Web Bluetooth), a physics step, a FIT encoder, and a Strava OAuth flow.
+    </p>
+    <div class="stack-grid">
+      <div class="stack-card">
+        <div class="stack-card-label">shell</div>
+        <div class="stack-card-title">Electron</div>
+        <div class="stack-card-desc">Chromium + Node.js. Reuses every React/TS component from Stacked verbatim. Native BLE/ANT+ via Node addons in the main process. Auto-update via <em>electron-updater</em>.</div>
+        <div class="tech-row"><span class="tag">Electron 30+</span><span class="tag">electron-builder</span><span class="tag">auto-updater</span></div>
+      </div>
+      <div class="stack-card">
+        <div class="stack-card-label">core</div>
+        <div class="stack-card-title">React + Vite + TS</div>
+        <div class="stack-card-desc">Same build chain as Stacked. Vite serves the renderer process in dev. Component patterns transfer 1:1.</div>
+        <div class="tech-row"><span class="tag">React 18</span><span class="tag">Vite 5</span><span class="tag">TypeScript</span></div>
+      </div>
+      <div class="stack-card">
+        <div class="stack-card-label">3D engine</div>
+        <div class="stack-card-title">Three.js</div>
+        <div class="stack-card-desc">Same library used by Stacked's 3D viewer. Route ribbon, glTF bike + rider, camera following, lighting.</div>
+        <div class="tech-row"><span class="tag">Three.js</span><span class="tag">OrbitControls</span><span class="tag">GLTFLoader</span></div>
+      </div>
+      <div class="stack-card">
+        <div class="stack-card-label">device IO · BLE</div>
+        <div class="stack-card-title">noble (native BLE)</div>
+        <div class="stack-card-desc">Node BLE library running in Electron's main process. Speaks GATT directly — FTMS, HRS, CPS, CSC. Persistent pairing, automatic reconnect on dropout.</div>
+        <div class="tech-row"><span class="tag">@abandonware/noble</span><span class="tag">FTMS</span><span class="tag">HRS</span><span class="tag">CPS</span></div>
+      </div>
+      <div class="stack-card">
+        <div class="stack-card-label">device IO · ANT+</div>
+        <div class="stack-card-title">ant-plus (USB)</div>
+        <div class="stack-card-desc">Node USB ANT+ wrapper. Talks to a Garmin/Suunto ANT+ stick. Adds Wahoo Snap, KICKR Snap V1, older Tacx units and many older HRMs to the supported list.</div>
+        <div class="tech-row"><span class="tag">ant-plus-next</span><span class="tag">USB ANT+ stick</span></div>
+      </div>
+      <div class="stack-card">
+        <div class="stack-card-label">physics</div>
+        <div class="stack-card-title">Pure JS</div>
+        <div class="stack-card-desc">Cycling power equation in TypeScript. ~40 lines of math. Integrated at 60 Hz inside a requestAnimationFrame loop.</div>
+        <div class="tech-row"><span class="tag">RK4 or symplectic Euler</span></div>
+      </div>
+      <div class="stack-card">
+        <div class="stack-card-label">backend</div>
+        <div class="stack-card-title">PocketBase (shared)</div>
+        <div class="stack-card-desc">Same instance Stacked uses. Reads from <em>projects</em>, writes to a new <em>rides</em> collection. RLS controls who sees what.</div>
+        <div class="tech-row"><span class="tag">SQLite</span><span class="tag">JS migrations</span></div>
+      </div>
+      <div class="stack-card">
+        <div class="stack-card-label">export</div>
+        <div class="stack-card-title">FIT + Strava OAuth</div>
+        <div class="stack-card-desc">FIT encoded in the browser via <em>fit-encoder</em>. Strava OAuth2 + activity upload. Tokens stored on PB (encrypted).</div>
+        <div class="tech-row"><span class="tag">fit-encoder</span><span class="tag">Strava /uploads</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HARDWARE -->
+<section id="hardware">
+  <div class="container">
+    <div class="eyebrow">// hardware compatibility</div>
+    <h2 class="section-title">Both protocols supported.<br>Same app, same code.</h2>
+    <p class="section-intro">
+      Going thick-client means we're not constrained by Web Bluetooth. The Electron main process opens raw BLE GATT via <em>noble</em> and a USB ANT+ dongle via <em>ant-plus-next</em>. Both run in parallel — the app shows one unified list of available devices regardless of protocol.
+    </p>
+    <div class="compat-grid">
+      <div class="compat">
+        <div class="compat-head"><div class="compat-name">Smart trainer (FTMS · BLE)</div><span class="compat-tag full">full</span></div>
+        <div class="compat-detail">Service 0x1826 · noble</div>
+        <div class="compat-desc">Wahoo Kickr, Tacx Neo, Elite Direto/Suito, Saris H3, JetBlack Volt — anything sold 2020+. Power, cadence, speed read; target grade or target power write.</div>
+      </div>
+      <div class="compat">
+        <div class="compat-head"><div class="compat-name">Smart trainer (FE-C · ANT+)</div><span class="compat-tag full">full</span></div>
+        <div class="compat-detail">Device profile 17 · ant-plus-next</div>
+        <div class="compat-desc">Older Kickr Snap, Wahoo CoreV1, original Tacx units, classic Elite trainers. Needs a USB ANT+ stick (~£30 Garmin or generic).</div>
+      </div>
+      <div class="compat">
+        <div class="compat-head"><div class="compat-name">Heart rate monitor (HRS · BLE)</div><span class="compat-tag full">full</span></div>
+        <div class="compat-detail">Service 0x180D · noble</div>
+        <div class="compat-desc">Every Garmin / Polar / Wahoo strap. RR intervals (HRV) available if needed.</div>
+      </div>
+      <div class="compat">
+        <div class="compat-head"><div class="compat-name">HRM (ANT+)</div><span class="compat-tag full">full</span></div>
+        <div class="compat-detail">Device profile 120 · ant-plus-next</div>
+        <div class="compat-desc">Older HR straps that don't speak BLE. Same USB stick covers both trainer and HRM channels simultaneously.</div>
+      </div>
+      <div class="compat">
+        <div class="compat-head"><div class="compat-name">Power meter (CPS · BLE/ANT+)</div><span class="compat-tag full">full</span></div>
+        <div class="compat-detail">Service 0x1818 · profile 11</div>
+        <div class="compat-desc">Stages, Quarq, 4iiii, Assioma, FSA Powerbox. Useful when the rider's PM is more accurate than their trainer.</div>
+      </div>
+      <div class="compat">
+        <div class="compat-head"><div class="compat-name">Cadence / speed (CSC)</div><span class="compat-tag full">full</span></div>
+        <div class="compat-detail">Service 0x1816 / profile 121-122</div>
+        <div class="compat-desc">Wahoo RPM, Garmin GSC10, Bryton. Optional — most riders use the trainer's built-in cadence.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SCHEMA -->
+<section id="schema">
+  <div class="container">
+    <div class="eyebrow">// data</div>
+    <h2 class="section-title">Two new PocketBase collections.<br>Same auth as Stacked.</h2>
+    <p class="section-intro">
+      No fork of the user model. Sign in once, your projects and your rides live next to each other under the same identity.
+    </p>
+    <div class="two-col">
+      <div class="context-card">
+        <h3>rides</h3>
+        <p>One row per ride attempt. Tied to a route (project) and a rider (user). Searchable for leaderboards and personal history.</p>
+        <ul>
+          <li><strong>id, owner_id, project_id</strong>relations + identity</li>
+          <li><strong>started_at, ended_at, duration_s</strong>timing</li>
+          <li><strong>distance_m, ascent_m</strong>route metrics</li>
+          <li><strong>avg_power, normalized_power, max_power</strong>aggregates</li>
+          <li><strong>avg_hr, max_hr, avg_cadence</strong>aggregates</li>
+          <li><strong>samples (jsonb)</strong>second-by-second blob, compressed</li>
+          <li><strong>fit_blob_url</strong>optional — stored in PB Storage if the rider opts in</li>
+          <li><strong>strava_activity_id</strong>set if uploaded</li>
+          <li><strong>is_public</strong>opt-in to appear on public leaderboards</li>
+        </ul>
+      </div>
+      <div class="context-card">
+        <h3>strava_tokens (separate collection)</h3>
+        <p>Refresh tokens are sensitive — kept off the rider's device, never in localStorage. PB rules: each user can read/write only their own row, no admin access.</p>
+        <ul>
+          <li><strong>user_id</strong>1:1 with users</li>
+          <li><strong>access_token, refresh_token</strong>OAuth2</li>
+          <li><strong>expires_at</strong>refresh on the fly when within 5 min</li>
+          <li><strong>athlete_id</strong>Strava's identifier, used by future segment-PR features</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ROADMAP -->
+<section id="roadmap">
+  <div class="container">
+    <div class="eyebrow">// the roadmap</div>
+    <h2 class="section-title">MVP first.<br>Then make it cool.</h2>
+    <p class="section-intro">
+      Each milestone is a thing that works end-to-end before we add gloss. Step 00 is a feasibility spike — get a trainer to respond to a slope command from the browser. If that works, everything else is plumbing.
+    </p>
+    <div class="timeline">
+      <div class="milestone">
+        <div class="milestone-num">00 · spike</div>
+        <div class="milestone-title">Bare Electron app talking to a smart trainer</div>
+        <div class="milestone-desc">~1-2 days. Skeleton Electron + Vite app. <em>noble</em> in the main process scans for FTMS BLE peripherals. Read power; write a 5% target grade. Confirm the trainer's resistance changes. If your stick speaks ANT+, do the same with <em>ant-plus-next</em>. This single proof unblocks everything.</div>
+        <div class="milestone-meta"><span>~1-2 days</span><span>no UI</span><span>device IO only</span></div>
+      </div>
+      <div class="milestone">
+        <div class="milestone-num">01 · mvp loop</div>
+        <div class="milestone-title">Ride a flat 2D route start to finish</div>
+        <div class="milestone-desc">Load a project's GPX from PB. Connect trainer + HRM via the device-pairing UI. Render the route as a 2D elevation chart (reuse Stacked's chart). Tick physics in the renderer. Display speed/distance/power HUD. On finish, dump a JSON of samples to disk. Pure plumbing — no 3D, no FIT, no Strava.</div>
+        <div class="milestone-meta"><span>BLE + ANT+</span><span>physics</span><span>JSON dump</span></div>
+      </div>
+      <div class="milestone">
+        <div class="milestone-num">02 · 3d</div>
+        <div class="milestone-title">Three.js scene with a bike on the path</div>
+        <div class="milestone-desc">Same wall geometry from Stacked's 3D viewer, but ground-coloured and textured. Bike + rider glTF. Camera follows. HUD overlay. Tilts the world or the camera with the gradient.</div>
+        <div class="milestone-meta"><span>three.js</span><span>glTF model</span><span>HUD</span></div>
+      </div>
+      <div class="milestone">
+        <div class="milestone-num">03 · export</div>
+        <div class="milestone-title">FIT file + Strava upload</div>
+        <div class="milestone-desc">Encode the sample buffer as a valid FIT. Add a download button. Implement the Strava OAuth2 flow (auth → callback → access/refresh tokens stored in PB). POST the FIT to /uploads. Show the resulting activity link.</div>
+        <div class="milestone-meta"><span>fit-encoder</span><span>OAuth2</span><span>Strava API</span></div>
+      </div>
+      <div class="milestone">
+        <div class="milestone-num">04 · leaderboards</div>
+        <div class="milestone-title">Race the field</div>
+        <div class="milestone-desc">Per-route leaderboard pulled from PB. Per-climb segment times. Personal record markers. "Ghost rider" rendering of the leader's pace ahead/behind you in 3D.</div>
+        <div class="milestone-meta"><span>rides query</span><span>segment slicing</span><span>ghost rendering</span></div>
+      </div>
+      <div class="milestone">
+        <div class="milestone-num">05 · polish</div>
+        <div class="milestone-title">Workouts, ERG mode, achievements</div>
+        <div class="milestone-desc">Structured workouts on top of routes (ERG mode = target power, the trainer holds it regardless of gradient). Achievement system tied to records (FTP test detection, KOMs, streaks). Spectator mode for race events.</div>
+        <div class="milestone-meta"><span>ERG mode</span><span>achievements</span><span>spectator</span></div>
+      </div>
+      <div class="milestone">
+        <div class="milestone-num">06 · stretch</div>
+        <div class="milestone-title">Multiplayer + route discovery</div>
+        <div class="milestone-desc">Multiplayer mode — riders on the same route at the same time, see each other as ghost models. Realtime telemetry sync via PocketBase's WebSocket subscriptions or a dedicated WebRTC link. Discovery feed — popular routes, recent uploads, "rides this week".</div>
+        <div class="milestone-meta"><span>WebRTC / WebSocket</span><span>discovery feed</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- RISKS -->
+<section id="risks">
+  <div class="container">
+    <div class="eyebrow">// risks &amp; open questions</div>
+    <h2 class="section-title">What could go wrong.</h2>
+    <p class="section-intro">
+      Honest list. Most of these have workarounds; some shape the architecture from day one.
+    </p>
+    <div class="two-col">
+      <div class="context-card">
+        <h3>Likely real problems</h3>
+        <ul>
+          <li><strong>BLE flakiness</strong>Device reconnection after a dropout needs explicit handling. Different trainer firmwares respond differently to identical FTMS commands. Native libraries handle this better than Web Bluetooth, but it's still per-device tuning.</li>
+          <li><strong>Native module builds</strong>noble + ant-plus depend on platform-native bindings. The CI build matrix needs Win/Mac/Linux runners and electron-rebuild needs to work on each.</li>
+          <li><strong>Strava rate limits</strong>100 uploads / 15 min per app. Personal use is fine. If we ever go public, switch to per-user OAuth quotas.</li>
+          <li><strong>FIT encoding gotchas</strong>Strava ingests FIT but is picky about lap markers and developer fields. First implementation will probably need 2-3 iterations to match what Garmin / Wahoo write.</li>
+          <li><strong>Code signing</strong>Mac requires Apple Developer ID (£99/yr) for users not to see "unidentified developer" warnings. Windows SmartScreen needs an EV cert (£200+/yr) to skip "this app is unsafe" prompts. Mitigate via clear install instructions; budget for it if going public.</li>
+        </ul>
+      </div>
+      <div class="context-card">
+        <h3>Unknowns to spike before deciding</h3>
+        <ul>
+          <li><strong>Your trainer model</strong>Step-00 spike confirms it speaks FTMS over BLE (or FE-C over ANT+). Either works with our stack; we just need to know which path to wire first.</li>
+          <li><strong>Power-to-speed calibration</strong>Real-world cyclists with the same power on the same gradient ride at slightly different speeds. Pick a sensible default (75 kg rider, CdA 0.32, Crr 0.005) and let advanced users tweak.</li>
+          <li><strong>Camera tilt vs world tilt</strong>Tilting the camera looks more "Zwift" but can make people feel motion sick. Tilting the world is unusual but cleaner. Prototype both.</li>
+          <li><strong>FIT vs TCX vs GPX</strong>Strava accepts all three; FIT is richest. Start with FIT but keep TCX as fallback.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- NEXT -->
+<section id="next">
+  <div class="container">
+    <div class="eyebrow">// what's next</div>
+    <div class="next">
+      <h2>Decisions to lock in.<br>Then build the spike.</h2>
+      <p>A short list of choices before code starts. None permanent.</p>
+      <ol class="checklist">
+        <li>
+          <div class="check-box"></div>
+          <div class="check-num">01</div>
+          <div class="check-text">
+            <strong>Step-00 spike: minimal Electron + noble + a real trainer.</strong>
+            <small>~1-2 days. Scaffold the app, scan for FTMS, read power, send a 5% target grade. Confirm the trainer pushes back. The whole project hinges on this single test.</small>
+          </div>
+        </li>
+        <li>
+          <div class="check-box"></div>
+          <div class="check-num">02</div>
+          <div class="check-text">
+            <strong>Pick a name. (Working title is "Stacked Ride".)</strong>
+            <small>Sibling to Stacked. Same theme. Alternatives: Stacked Sprint, Stacked Pain Cave, Stacked Suffer. Or something different.</small>
+          </div>
+        </li>
+        <li>
+          <div class="check-box"></div>
+          <div class="check-num">03</div>
+          <div class="check-text">
+            <strong>New repo, shared PocketBase.</strong>
+            <small>Create <em>dabbsLondon/stacked-ride</em>. Point its config at the same PB instance as Stacked. Add a <em>rides</em> migration on first start. Reuse the auth flow from Stacked verbatim.</small>
+          </div>
+        </li>
+        <li>
+          <div class="check-box"></div>
+          <div class="check-num">04</div>
+          <div class="check-text">
+            <strong>Strava developer app.</strong>
+            <small>Register at <em>strava.com/settings/api</em>. OAuth callback uses Electron's custom URL scheme (<em>stacked-ride://callback</em>). Tokens stored in the new <em>strava_tokens</em> PB collection.</small>
+          </div>
+        </li>
+        <li>
+          <div class="check-box"></div>
+          <div class="check-num">05</div>
+          <div class="check-text">
+            <strong>Then I build the MVP loop (step 01).</strong>
+            <small>2D first, then 3D. Smallest possible thing that lets you ride a route from start to finish with telemetry recorded.</small>
+          </div>
+        </li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<footer>the plan · v0.1 · companion to STACKED · ready when you are</footer>
+
+</body>
+</html>

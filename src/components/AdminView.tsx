@@ -3,7 +3,7 @@ import type { Climb, CutSource } from '../types';
 import {
   listAllProjectsAdmin,
   type RemoteProjectRow,
-} from '../engine/supabase';
+} from '../engine/backend';
 
 interface Props {
   onClose: () => void;

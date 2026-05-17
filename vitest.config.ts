@@ -1,6 +1,11 @@
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
+  // Force the backend adapter into its "no config" path during tests, even
+  // when a developer has VITE_PB_URL set in their local .env.local.
+  define: {
+    'import.meta.env.VITE_PB_URL': '""',
+  },
   test: {
     environment: 'jsdom',
     globals: false,
@@ -12,10 +17,10 @@ export default defineConfig({
       include: ['src/engine/**/*.ts'],
       exclude: [
         'src/engine/**/*.test.ts',
-        // supabase.ts is a thin adapter over an external service — only the
-        // null-fallback path is unit-testable; integration coverage happens
-        // in staging against a real Supabase project.
-        'src/engine/supabase.ts',
+        // backend.ts is a thin adapter over PocketBase; only the no-config
+        // fallback is unit-testable here. Integration coverage happens in
+        // staging against a real PocketBase instance.
+        'src/engine/backend.ts',
       ],
       thresholds: {
         lines: 80,

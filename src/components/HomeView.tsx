@@ -1,6 +1,6 @@
 import type { Mode } from '../types';
 import type { ProjectSnapshot } from '../engine/projects';
-import type { Profile } from '../engine/supabase';
+import type { Profile } from '../engine/backend';
 
 interface Props {
   projects: ProjectSnapshot[];

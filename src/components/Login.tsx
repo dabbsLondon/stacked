@@ -1,25 +1,30 @@
 import { useState } from 'react';
-import { signInWithMagicLink } from '../engine/supabase';
+import { signIn, signUp } from '../engine/backend';
+
+type Mode = 'sign-in' | 'sign-up';
 
 export function Login() {
+  const [mode, setMode] = useState<Mode>('sign-in');
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [displayName, setDisplayName] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [sentTo, setSentTo] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const trimmed = email.trim();
-    if (!trimmed) return;
+    const em = email.trim();
+    const pw = password;
+    if (!em || !pw) return;
     setSubmitting(true);
     setError(null);
-    const res = await signInWithMagicLink(trimmed);
+    const res =
+      mode === 'sign-in'
+        ? await signIn(em, pw)
+        : await signUp(em, pw, displayName);
     setSubmitting(false);
-    if (res.ok) {
-      setSentTo(trimmed);
-    } else {
-      setError(res.error ?? 'Could not send the link.');
-    }
+    if (!res.ok) setError(res.error ?? 'Could not sign you in.');
+    // On success, onAuthChange fires elsewhere and the parent re-renders.
   }
 
   return (
@@ -31,59 +36,117 @@ export function Login() {
       </header>
       <main className="login-main">
         <div className="login-card">
-          <div className="mono login-eyebrow">// SIGN IN</div>
-          <h1 className="login-title">Welcome back.</h1>
+          <div className="mono login-eyebrow">
+            // {mode === 'sign-in' ? 'SIGN IN' : 'CREATE ACCOUNT'}
+          </div>
+          <h1 className="login-title">
+            {mode === 'sign-in' ? 'Welcome back.' : 'Welcome aboard.'}
+          </h1>
           <p className="login-sub">
-            Sign in with a one-time magic link. We'll email it to you — no
-            password to remember.
+            {mode === 'sign-in'
+              ? 'Sign in with your email and password. Use the same account on any device with this Stacked instance.'
+              : 'Create an account on this Stacked instance. Email and password only — no verification flow.'}
           </p>
 
-          {sentTo ? (
-            <div className="login-sent">
-              <div className="mono login-sent-label">CHECK YOUR INBOX</div>
-              <p className="login-sent-body">
-                We've sent a link to <strong>{sentTo}</strong>. Click it from
-                the same browser to finish signing in.
-              </p>
-              <button
-                className="btn login-back"
-                onClick={() => {
-                  setSentTo(null);
-                  setEmail('');
-                }}
-              >
-                use a different email
-              </button>
-            </div>
-          ) : (
-            <form className="login-form" onSubmit={onSubmit}>
+          <form className="login-form" onSubmit={onSubmit}>
+            {mode === 'sign-up' && (
               <label className="login-field">
-                <span className="mono login-field-label">EMAIL</span>
+                <span className="mono login-field-label">DISPLAY NAME</span>
                 <input
-                  type="email"
+                  type="text"
                   className="login-input"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@example.com"
-                  autoComplete="email"
-                  autoFocus
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  placeholder="how should we show your name?"
+                  autoComplete="nickname"
                   disabled={submitting}
                 />
               </label>
-              {error && <div className="error mono login-error">{error}</div>}
-              <button
-                className="btn btn-primary login-submit"
-                type="submit"
-                disabled={submitting || !email.trim()}
-              >
-                {submitting ? 'SENDING…' : 'SEND MAGIC LINK'}
-              </button>
-            </form>
-          )}
+            )}
+            <label className="login-field">
+              <span className="mono login-field-label">EMAIL</span>
+              <input
+                type="email"
+                className="login-input"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                autoComplete="email"
+                required
+                autoFocus
+                disabled={submitting}
+              />
+            </label>
+            <label className="login-field">
+              <span className="mono login-field-label">PASSWORD</span>
+              <input
+                type="password"
+                className="login-input"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder={mode === 'sign-up' ? 'at least 8 characters' : '•••••••'}
+                autoComplete={
+                  mode === 'sign-in' ? 'current-password' : 'new-password'
+                }
+                minLength={mode === 'sign-up' ? 8 : 1}
+                required
+                disabled={submitting}
+              />
+            </label>
+
+            {error && <div className="error mono login-error">{error}</div>}
+
+            <button
+              className="btn btn-primary login-submit"
+              type="submit"
+              disabled={submitting || !email.trim() || !password}
+            >
+              {submitting
+                ? mode === 'sign-in'
+                  ? 'SIGNING IN…'
+                  : 'CREATING ACCOUNT…'
+                : mode === 'sign-in'
+                  ? 'SIGN IN'
+                  : 'CREATE ACCOUNT'}
+            </button>
+          </form>
+
+          <div className="login-switch">
+            {mode === 'sign-in' ? (
+              <>
+                <span>No account yet?</span>{' '}
+                <button
+                  className="login-switch-btn"
+                  onClick={() => {
+                    setMode('sign-up');
+                    setError(null);
+                  }}
+                  type="button"
+                >
+                  Create one →
+                </button>
+              </>
+            ) : (
+              <>
+                <span>Already have one?</span>{' '}
+                <button
+                  className="login-switch-btn"
+                  onClick={() => {
+                    setMode('sign-in');
+                    setError(null);
+                  }}
+                  type="button"
+                >
+                  Sign in →
+                </button>
+              </>
+            )}
+          </div>
         </div>
       </main>
       <footer className="login-foot mono">
-        100% browser · GPX in, GPX out · multi-device when you sign in
+        runs on PocketBase · GPX in, GPX out · projects sync across your
+        devices when you sign in
       </footer>
     </div>
   );

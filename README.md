@@ -93,18 +93,20 @@ to anything that hosts static HTML.
 - **Duplicate** any saved project under a new name
 
 ### Accounts & multi-user (optional)
-- Configure Supabase env vars (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`)
-  to enable sign-in. Without them the app is the same pure-localStorage
-  experience as before.
-- **Magic-link sign-in** (email-only, no passwords).
-- On sign-in, projects sync to Supabase: any local-only projects get pushed
-  up, and any remote projects newer than local get pulled down.
+- Backed by **[PocketBase](https://pocketbase.io)** — single Go binary,
+  embedded SQLite, no Docker. Configure `VITE_PB_URL` to enable; without
+  it the app stays in pure-localStorage mode.
+- **Email + password sign-in / sign-up**, no SMTP required.
+- On sign-in, projects sync to PocketBase: any local-only projects get
+  pushed up, any remote projects newer than local get pulled down.
 - Every save / delete writes through to both local cache and remote.
-- **Admin role** (set in DB via `update profiles set role='admin'`) unlocks
-  the **⚙ ADMIN** view on the home page — browse every user's projects
-  with climb + slice breakdowns, and **↓ PULL** any user's climb or cut
-  source straight into your own cut workspace.
-- Full setup guide: [`docs/SUPABASE_SETUP.md`](docs/SUPABASE_SETUP.md).
+- **Admin role** (set via the PocketBase admin UI: Collections → users →
+  set `role=admin`) unlocks the **⚙ ADMIN** view on the home page —
+  browse every user's projects with climb + slice breakdowns, and
+  **↓ PULL** any user's climb or cut source straight into your own cut
+  workspace.
+- Setup: [`docs/POCKETBASE_SETUP.md`](docs/POCKETBASE_SETUP.md). Deploy:
+  [`docs/DEPLOY.md`](docs/DEPLOY.md).
 
 ---
 
@@ -160,14 +162,14 @@ uploaded as artifacts on each run.
 
 | Status | Files | Tests | Passed | Failed | Skipped |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| 🟢 passing | 7 | 69 | 69 | 0 | 0 |
+| 🟢 passing | 7 | 71 | 71 | 0 | 0 |
 
 | File | Tests |
 | --- | ---: |
 | `src/engine/gpx.test.ts` | 16 |
 | `src/engine/projects.test.ts` | 14 |
+| `src/engine/backend.test.ts` | 11 |
 | `src/engine/profile.test.ts` | 10 |
-| `src/engine/supabase.test.ts` | 9 |
 | `src/engine/stitch.test.ts` | 8 |
 | `src/engine/detect.test.ts` | 7 |
 | `src/engine/cut.test.ts` | 5 |

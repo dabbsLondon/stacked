@@ -38,10 +38,9 @@ jobs:
         env:
           # Served from https://<user>.github.io/<repo>/ so Vite needs the base.
           BASE_PATH: /${{ github.event.repository.name }}/
-          # Optional Supabase env. If you haven't set these secrets the app
-          # still builds and runs in pure-localStorage mode.
-          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          # Optional: point at a public PocketBase instance. Without this the
+          # static site runs in pure-localStorage mode (no login, no sync).
+          VITE_PB_URL: ${{ secrets.VITE_PB_URL }}
         run: npm run build
 
       - name: SPA fallback

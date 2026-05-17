@@ -1,182 +1,249 @@
 # Deploying Stacked
 
-Two pieces:
+Stacked is two pieces, each can run independently:
 
-1. **Static hosting** for the SPA — GitHub Pages by default (zero-cost, no
-   account beyond GitHub). Cloudflare Pages / Netlify / Vercel all work
-   identically; switch the workflow if you prefer one of those.
-2. **Supabase project** (optional) — only needed if you want sign-in, multi-
-   device sync and the admin view. Skip step 2 to ship a pure-localStorage
-   version.
+1. **The SPA** — a Vite-built bundle of static files. Serve from any static
+   host (or from PocketBase itself, see below).
+2. **PocketBase** — a single Go binary that handles auth + SQLite +
+   admin UI. Optional: skip it to ship a pure-localStorage build.
 
-The two are independent. You can deploy the SPA first, confirm it works
-without Supabase, then come back and wire Supabase whenever you're ready.
-
----
-
-## 1 · Deploy the SPA to GitHub Pages
-
-The workflow at [`.github/workflows/deploy.yml`](../.github/workflows/deploy.yml)
-builds the production bundle and pushes it to GitHub Pages on every push to
-`main`. Final URL:
-
-```
-https://<your-github-username>.github.io/<repo-name>/
-```
-
-For the existing repo that's
-**https://dabbslondon.github.io/stacked/**.
-
-### One-time setup (in the GitHub web UI)
-
-1. Open the repo → **Settings → Pages**.
-2. Under **Build and deployment → Source**, choose **GitHub Actions**.
-
-That's it — Pages is now driven by the workflow.
-
-### Trigger a deploy
-
-Either push a commit to `main`, or open **Actions → Deploy → Run workflow**
-to trigger one manually. The workflow:
-
-- Installs deps + builds (`npm ci && npm run build`).
-- Injects `BASE_PATH=/<repo-name>/` so Vite's asset URLs resolve.
-- Reads `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` from repo secrets
-  (optional — without them the site runs in pure-localStorage mode).
-- Copies `dist/index.html` to `dist/404.html` so deep links and the magic-
-  link redirect resolve client-side instead of hitting Pages' 404.
-- Uploads the `dist/` folder as a Pages artifact and deploys it.
-
-You can watch the run live on the Actions tab. When it goes green, hit the
-URL above.
-
-### Custom domain (optional)
-
-Add a `CNAME` file to the repo root with your domain (or use the Pages
-settings page). Update the Supabase **Site URL** (see §2) to match.
+The recommended deploy layout: **one machine, both processes**. No
+Docker. No container orchestration. One binary on a configurable port,
+plus a static-file directory that the same binary can serve.
 
 ---
 
-## 2 · Provision Supabase (for accounts + admin)
+## 1 · Local end-to-end smoke test
 
-Skip this section if you only want the offline / localStorage build.
-
-### 2a · Create the project
-
-1. Go to <https://app.supabase.com/> → **New project**.
-2. Pick a region close to you. Generate and save the Postgres password.
-3. Wait for the project to come up (~1 minute).
-4. **Project Settings → API**:
-   - Copy the **Project URL**.
-   - Copy the **anon public** API key.
-   - These two values are what the SPA needs.
-
-### 2b · Apply the schema
-
-In the Supabase dashboard, **SQL Editor → New query** and paste the contents
-of [`supabase/migrations/0001_init.sql`](../supabase/migrations/0001_init.sql).
-Click **Run**.
-
-This creates:
-
-- `profiles` (id, display_name, role) — one row per signed-in user.
-- `projects` (id, owner_id, name, snapshot jsonb, timestamps).
-- A trigger that auto-creates a profile when a new user signs up.
-- Row-level security policies so users only see their own projects, and
-  `role='admin'` users can additionally read everyone's projects.
-
-Verify in **Table Editor** that both `profiles` and `projects` now exist.
-
-### 2c · Configure the auth provider
-
-The app uses **magic links** (email-only sign-in). Default Supabase auth
-already supports this, so the only required step is the redirect URL:
-
-1. **Authentication → URL Configuration**.
-2. Set **Site URL** to your deployed URL (e.g.
-   `https://dabbslondon.github.io/stacked/`).
-3. Under **Redirect URLs**, add the same value plus `http://localhost:5173`
-   for local dev. Save.
-
-When a user clicks their magic link they'll be sent back to that URL with
-the auth tokens in the hash; the SPA reads them and signs them in.
-
-### 2d · Wire the keys into the build
-
-Two secrets in GitHub:
-
-1. Repo → **Settings → Secrets and variables → Actions → New repository
-   secret**.
-2. Add **`VITE_SUPABASE_URL`** with the value from §2a.
-3. Add **`VITE_SUPABASE_ANON_KEY`** with the value from §2a.
-
-Re-run the **Deploy** workflow (or push any commit). The next build picks
-the secrets up and the deployed site gets a login screen.
-
-For local dev:
+Before deploying anywhere, run the whole thing on your laptop:
 
 ```sh
-cp .env.example .env.local
-# edit .env.local with the same two values
-npm run dev
+# Terminal 1 — PocketBase (port 8090)
+npm run pb:setup       # one-off, downloads the binary
+npm run pb:start       # serves http://127.0.0.1:8090
+
+# Terminal 2 — SPA dev server (port 5173)
+cp .env.example .env.local   # one-off
+npm run dev            # serves http://localhost:5173
 ```
 
-### 2e · Promote yourself to admin
+Open <http://localhost:5173/>. Sign up, save a project, see it sync to
+PB at <http://127.0.0.1:8090/_/> (Collections → projects).
 
-Sign up via the live site once (magic link) so a `profiles` row exists for
-you. Then back in **SQL Editor**:
+Detailed PocketBase setup: [`docs/POCKETBASE_SETUP.md`](POCKETBASE_SETUP.md).
 
-```sql
-update public.profiles
-set role = 'admin'
-where id = (select id from auth.users where email = 'you@example.com');
+---
+
+## 2 · Single-machine production deploy
+
+The simplest production layout: one VPS (DigitalOcean / Linode / Hetzner
+/ a Pi / your old laptop) runs **one** binary that serves the SPA's
+static files AND the PocketBase API on the same port.
+
+### 2a · Build the SPA
+
+```sh
+npm ci
+npm run build           # → dist/
 ```
 
-Reload the site. The home page now has a **⚙ ADMIN** button that opens
-the cross-user project / slice browser.
+`dist/` is fully self-contained — copy it to the deployment machine. Set
+the env var that points at PocketBase **at build time**:
+
+```sh
+VITE_PB_URL=https://pb.example.com npm run build
+```
+
+If you're serving SPA + PB from the same origin (no CORS) you can use a
+relative URL:
+
+```sh
+VITE_PB_URL=/ npm run build      # use the same origin's /api/...
+```
+
+### 2b · Copy the artifacts to the deployment machine
+
+```sh
+# locally
+rsync -a dist/                  user@host:/srv/stacked/dist/
+rsync -a pocketbase/pocketbase  user@host:/srv/stacked/pocketbase
+rsync -a pocketbase/pb_migrations/  user@host:/srv/stacked/pb_migrations/
+```
+
+On the target machine:
+
+```sh
+mkdir -p /srv/stacked/pb_data
+cd /srv/stacked
+chmod +x pocketbase
+```
+
+### 2c · Run PocketBase as the only server
+
+PocketBase has a built-in static file server with the `--publicDir` flag
+that serves any folder under the API. So both the SPA and the API come
+out of one binary, on one port — **no port conflicts possible**.
+
+```sh
+cd /srv/stacked
+./pocketbase serve \
+  --http=0.0.0.0:8090 \
+  --publicDir=./dist \
+  --dir=./pb_data \
+  --migrationsDir=./pb_migrations
+```
+
+Now the host serves:
+
+- `http://<host>:8090/`             → the SPA (`dist/index.html`)
+- `http://<host>:8090/api/...`      → PocketBase REST API
+- `http://<host>:8090/_/`           → PB admin UI
+
+Build the SPA with `VITE_PB_URL=/` (or the public origin) and the
+frontend talks to the same origin's `/api`. **No CORS config needed**
+because everything is one origin.
+
+### 2d · Pick a different port to avoid conflicts
+
+The `--http=` flag is the only thing to change. Choose any free port:
+
+```sh
+./pocketbase serve --http=0.0.0.0:18090 ...
+```
+
+If you're behind a reverse proxy that already binds 80/443, point the
+proxy at this port. If you're not, you can use 80 directly (needs
+`cap_net_bind` on Linux for non-root) but 8090 / 18090 is fine for most
+internal deployments.
+
+### 2e · Run it as a service
+
+**systemd** (Linux):
+
+```ini
+# /etc/systemd/system/stacked.service
+[Unit]
+Description=Stacked (PocketBase + SPA)
+After=network.target
+
+[Service]
+Type=simple
+User=stacked
+WorkingDirectory=/srv/stacked
+ExecStart=/srv/stacked/pocketbase serve \
+  --http=0.0.0.0:8090 \
+  --publicDir=/srv/stacked/dist \
+  --dir=/srv/stacked/pb_data \
+  --migrationsDir=/srv/stacked/pb_migrations
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Then:
+
+```sh
+sudo systemctl daemon-reload
+sudo systemctl enable --now stacked
+sudo systemctl status stacked
+```
+
+**launchd** (macOS, e.g. running on your own Mac as the "deployment
+machine"):
+
+```xml
+<!-- ~/Library/LaunchAgents/com.stacked.plist -->
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+  <key>Label</key><string>com.stacked</string>
+  <key>WorkingDirectory</key><string>/Users/you/stacked</string>
+  <key>ProgramArguments</key><array>
+    <string>/Users/you/stacked/pocketbase</string>
+    <string>serve</string>
+    <string>--http=127.0.0.1:8090</string>
+    <string>--publicDir=/Users/you/stacked/dist</string>
+    <string>--dir=/Users/you/stacked/pb_data</string>
+    <string>--migrationsDir=/Users/you/stacked/pb_migrations</string>
+  </array>
+  <key>RunAtLoad</key><true/>
+  <key>KeepAlive</key><true/>
+  <key>StandardOutPath</key><string>/tmp/stacked.log</string>
+  <key>StandardErrorPath</key><string>/tmp/stacked.err</string>
+</dict></plist>
+```
+
+```sh
+launchctl load ~/Library/LaunchAgents/com.stacked.plist
+launchctl start com.stacked
+```
+
+### 2f · TLS (optional)
+
+If you've got a domain, put **Caddy** in front — its single-binary auto-
+TLS is the obvious match for the PocketBase ethos:
+
+```Caddyfile
+# /etc/caddy/Caddyfile
+stacked.example.com {
+    reverse_proxy 127.0.0.1:8090
+}
+```
+
+That's it — Caddy provisions Let's Encrypt automatically. Rebuild the
+SPA with `VITE_PB_URL=https://stacked.example.com` (or just `/` if
+serving same-origin) and you're done.
 
 ---
 
 ## 3 · Verify the deploy
 
-A quick checklist:
+A quick checklist on the running production host:
 
-- [ ] `https://<your-username>.github.io/<repo>/` loads without console
-  errors. Empty home page = expected on first visit.
-- [ ] Without Supabase secrets: home page shows `v0.2 · client-side · no
-  signup`, no login screen.
-- [ ] With Supabase secrets: page shows the Login screen with a magic-link
-  field instead.
-- [ ] Magic-link email arrives. Clicking it lands you back on the deployed
-  URL signed in.
-- [ ] Create a project → save → it appears in **Supabase → Table Editor →
-  projects**.
-- [ ] After running the admin promotion SQL: signed-in admin sees an
-  **⚙ ADMIN** button on the home page.
+- [ ] `curl http://<host>:<port>/` returns the SPA HTML.
+- [ ] `curl http://<host>:<port>/api/health` returns
+  `{"code":200,"message":"API is healthy."}`.
+- [ ] Loading the URL in a browser shows the Stacked login screen.
+- [ ] Sign up via the UI — the new user appears in the PB admin UI.
+- [ ] Save a project, refresh, the project is still there.
+- [ ] Promote yourself to admin (PB admin UI → Collections → users → set
+  `role=admin`). The `⚙ ADMIN` button appears on the home page.
 
 ---
 
-## 4 · Updating the deployment
+## 4 · Backup
 
-The deploy workflow runs on every push to `main`. CI (`ci.yml`) runs in
-parallel and gates nothing — failing tests don't block the deploy. If you
-want stricter behaviour, change `deploy.yml` to `needs: ci`.
+Two things to back up:
 
-To deploy a specific commit / branch manually: Actions → Deploy → Run
-workflow → pick the ref.
+- `pb_data/` — the SQLite DB and uploaded files. Snapshot regularly.
+- `pb_migrations/` — version-controlled in this repo; restore from
+  git.
+
+A one-liner cron for the DB:
+
+```sh
+0 4 * * *  cp /srv/stacked/pb_data/data.db /backups/stacked-$(date +\%F).db
+```
+
+PocketBase uses a WAL-mode SQLite file; copying while the server runs is
+safe but you'll get a slightly-stale snapshot. For a fully consistent
+dump, run `pocketbase admin backup` (built-in command) or pause the
+service briefly.
 
 ---
 
-## 5 · Alternative hosts
+## 5 · Splitting SPA + PocketBase across hosts (only if you must)
 
-If you'd rather not use GitHub Pages, swap the `deploy.yml` workflow for:
+If you don't want one binary serving both, run them separately:
 
-- **Cloudflare Pages** — connect the repo at <https://dash.cloudflare.com/>;
-  set build command `npm run build`, output `dist`, env vars
-  `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY`. No `BASE_PATH` needed —
-  CF Pages serves at the root.
-- **Netlify** — same idea via `netlify deploy --build`.
-- **Vercel** — same idea via `vercel deploy`.
+- Static host (GitHub Pages, Cloudflare Pages, Netlify, Vercel, S3, …):
+  serves `dist/` only. Build with `VITE_PB_URL=https://pb.example.com`.
+- PocketBase host: runs the binary, only API/admin. Configure CORS at
+  startup with `--origins=https://stacked.example.com`.
 
-In all three the `BASE_PATH` env var should be unset (defaults to `/`).
-Update the Supabase **Site URL** to your new host before sign-in works.
+This is more moving pieces (DNS, two hosts, CORS) and the only good
+reason to do it is if you've already got Pages set up and don't want a
+VPS. The single-host layout in §2 is almost always simpler.

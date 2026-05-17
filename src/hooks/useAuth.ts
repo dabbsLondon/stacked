@@ -1,48 +1,48 @@
 import { useEffect, useState } from 'react';
 import {
-  SUPABASE_ENABLED,
-  supabase,
+  BACKEND_ENABLED,
   getCurrentProfile,
+  onAuthChange,
+  pb,
   type Profile,
-} from '../engine/supabase';
+} from '../engine/backend';
 
 export type AuthState =
-  | { kind: 'disabled' } // Supabase not configured — solo localStorage mode
+  | { kind: 'disabled' } // No VITE_PB_URL — pure localStorage mode
   | { kind: 'loading' }
   | { kind: 'signed-out' }
   | { kind: 'signed-in'; userId: string; profile: Profile | null };
 
 export function useAuth(): AuthState {
   const [state, setState] = useState<AuthState>(() =>
-    SUPABASE_ENABLED ? { kind: 'loading' } : { kind: 'disabled' },
+    BACKEND_ENABLED ? { kind: 'loading' } : { kind: 'disabled' },
   );
 
   useEffect(() => {
-    if (!SUPABASE_ENABLED || !supabase) return;
+    if (!BACKEND_ENABLED || !pb) return;
     let mounted = true;
 
     async function refresh() {
-      if (!supabase) return;
-      const { data } = await supabase.auth.getUser();
-      if (!mounted) return;
-      const user = data.user;
-      if (!user) {
+      if (!pb || !mounted) return;
+      if (!pb.authStore.isValid || !pb.authStore.model) {
         setState({ kind: 'signed-out' });
         return;
       }
       const profile = await getCurrentProfile();
       if (!mounted) return;
-      setState({ kind: 'signed-in', userId: user.id, profile });
+      setState({
+        kind: 'signed-in',
+        userId: pb.authStore.model.id as string,
+        profile,
+      });
     }
 
     refresh();
-    const { data: subscription } = supabase.auth.onAuthStateChange(() => {
-      refresh();
-    });
+    const unsubscribe = onAuthChange(() => refresh());
 
     return () => {
       mounted = false;
-      subscription.subscription.unsubscribe();
+      unsubscribe();
     };
   }, []);
 

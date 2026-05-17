@@ -11,12 +11,14 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "coverage": "vitest run --coverage --reporter=default --reporter=json --outputFile.json=vitest-results.json",
-    "ci:summary": "node scripts/ci-summary.mjs"
+    "ci:summary": "node scripts/ci-summary.mjs",
+    "pb:setup": "sh pocketbase/setup.sh",
+    "pb:start": "cd pocketbase && ./pocketbase serve --http=127.0.0.1:8090"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.105.4",
     "@types/three": "^0.184.1",
     "leaflet": "^1.9.4",
+    "pocketbase": "^0.26.9",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "three": "^0.184.0",

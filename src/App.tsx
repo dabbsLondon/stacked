@@ -20,12 +20,12 @@ import { Login } from './components/Login';
 import { AdminView } from './components/AdminView';
 import { useAuth } from './hooks/useAuth';
 import {
+  BACKEND_ENABLED,
   deleteRemoteProject,
   listRemoteProjects,
   saveRemoteProject,
   signOut,
-  SUPABASE_ENABLED,
-} from './engine/supabase';
+} from './engine/backend';
 import {
   DEFAULT_BRIDGE,
   deleteProject,
@@ -293,7 +293,7 @@ export default function App() {
   // local copy mirrors the remote and subsequent save/delete just write
   // through to both.
   useEffect(() => {
-    if (!SUPABASE_ENABLED) return;
+    if (!BACKEND_ENABLED) return;
     if (auth.kind !== 'signed-in') return;
     let cancelled = false;
 

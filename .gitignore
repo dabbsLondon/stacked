@@ -8,3 +8,10 @@ dist
 .env.*.local
 coverage
 vitest-results.json
+
+# PocketBase: the binary + the SQLite DB live next to the migrations but
+# aren't committed. setup.sh recreates them and migrations apply at startup.
+pocketbase/pocketbase
+pocketbase/pb_data
+pocketbase/CHANGELOG.md
+pocketbase/LICENSE.md

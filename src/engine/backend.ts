@@ -58,11 +58,17 @@ interface PbProjectRecord {
 }
 
 function recordToProject(r: PbProjectRecord): RemoteProjectRow {
+  // Force the snapshot id to match the PB record id. The snapshot stored
+  // inside a PB row was written with whatever local id the client minted
+  // (often a UUID), but only `r.id` is what PB matches on for future
+  // updates. Aligning them here keeps a freshly-pulled project from
+  // re-creating itself on the next push.
+  const snapshot: ProjectSnapshot = { ...r.snapshot, id: r.id };
   return {
     id: r.id,
     owner_id: r.owner,
     name: r.name,
-    snapshot: r.snapshot,
+    snapshot,
     is_public: Boolean(r.is_public),
     created_at: r.created,
     updated_at: r.updated,
@@ -203,6 +209,43 @@ export async function saveRemoteProject(
   } catch (e) {
     console.warn('saveRemoteProject create failed', e);
     return null;
+  }
+}
+
+// Walk the current user's PB projects, group by name, delete every
+// duplicate except the most-recently-updated entry per name. Returns the
+// number of records deleted from PocketBase. Used by the reconcile flow
+// to clean up the historical mess from when every save created a fresh
+// row (each call to saveRemoteProject before the pushAndMigrate fix did
+// that under the hood — explained in the App.tsx comment).
+export async function dedupeRemoteByName(): Promise<number> {
+  if (!pb || !pb.authStore.isValid) return 0;
+  const userId = pb.authStore.model?.id;
+  if (!userId) return 0;
+  try {
+    const records = await pb
+      .collection('projects')
+      .getFullList<PbProjectRecord>({
+        sort: '-updated',
+        filter: `owner = "${userId}"`,
+      });
+    const seen = new globalThis.Set<string>();
+    const toDelete: string[] = [];
+    for (const r of records) {
+      if (seen.has(r.name)) toDelete.push(r.id);
+      else seen.add(r.name);
+    }
+    for (const id of toDelete) {
+      try {
+        await pb.collection('projects').delete(id);
+      } catch (e) {
+        console.warn('dedupeRemoteByName: delete failed', id, e);
+      }
+    }
+    return toDelete.length;
+  } catch (e) {
+    console.warn('dedupeRemoteByName failed', e);
+    return 0;
   }
 }
 

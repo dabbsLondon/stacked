@@ -21,6 +21,7 @@ import { AdminView } from './components/AdminView';
 import { useAuth } from './hooks/useAuth';
 import {
   BACKEND_ENABLED,
+  dedupeRemoteByName,
   deleteRemoteProject,
   listAllProjectsAdmin,
   listPublicProjects,
@@ -102,6 +103,37 @@ export default function App() {
   );
   // Track the last-saved snapshot to detect "dirty" state.
   const [lastSavedKey, setLastSavedKey] = useState<string>(snapshotKey(initial));
+
+  // Ref mirrors projectId for callbacks that close over an older render.
+  // Used by pushAndMigrate so the post-await branch can compare against the
+  // live current-project id rather than the stale closure value.
+  const projectIdRef = useRef<string>(initial.id);
+  useEffect(() => {
+    projectIdRef.current = projectId;
+  }, [projectId]);
+
+  // Push a snapshot to PocketBase and migrate the local id to PB's
+  // generated id when needed. Centralising this here is what stops the
+  // "every save creates another PB row" duplication: PocketBase rejects
+  // every custom id, so our UUIDs always trigger CREATE; if we never
+  // adopt the returned PB id, the next save creates another fresh row.
+  async function pushAndMigrate(
+    snap: ProjectSnapshot,
+  ): Promise<ProjectSnapshot> {
+    if (auth.kind !== 'signed-in') return snap;
+    const row = await saveRemoteProject(snap);
+    if (!row) return snap;
+    if (row.id === snap.id) return snap;
+    deleteProject(snap.id);
+    const migrated: ProjectSnapshot = { ...snap, id: row.id };
+    saveProject(migrated);
+    if (projectIdRef.current === snap.id) {
+      projectIdRef.current = row.id;
+      setProjectId(row.id);
+    }
+    setSavedProjects(listProjects());
+    return migrated;
+  }
 
   // Keep bridges array length in sync with climbs.length - 1.
   useEffect(() => {
@@ -261,11 +293,12 @@ export default function App() {
       createdAt: Date.now(),
     };
     saveProject(snap);
-    if (auth.kind === 'signed-in') void saveRemoteProject(snap);
     setSavedProjects(listProjects());
     setProjectId(id);
+    projectIdRef.current = id;
     setProjectName(name);
     setLastSavedKey(snapshotKey(snap));
+    if (auth.kind === 'signed-in') void pushAndMigrate(snap);
   }
 
   function handleRename(name: string) {
@@ -274,9 +307,9 @@ export default function App() {
     if (savedProjects.find((p) => p.id === projectId)) {
       const snap: ProjectSnapshot = { ...currentSnapshot, name };
       saveProject(snap);
-      if (auth.kind === 'signed-in') void saveRemoteProject(snap);
       setSavedProjects(listProjects());
       setLastSavedKey(snapshotKey(snap));
+      if (auth.kind === 'signed-in') void pushAndMigrate(snap);
     }
   }
 
@@ -300,14 +333,16 @@ export default function App() {
     const updated: ProjectSnapshot = { ...project, isPublic: nextPublic };
     saveProject(updated);
     setSavedProjects(listProjects());
-    const ok = await setProjectPublic(project.id, nextPublic);
+    // Make sure the project has been pushed (and the local id migrated to a
+    // PB-shaped id) before flipping its visibility — setProjectPublic only
+    // works on real PB record ids.
+    const migrated = await pushAndMigrate(updated);
+    const ok = await setProjectPublic(migrated.id, nextPublic);
     if (!ok) {
       // Revert if the server refused (e.g., not owner).
-      saveProject({ ...project, isPublic: project.isPublic ?? false });
+      saveProject({ ...migrated, isPublic: project.isPublic ?? false });
       setSavedProjects(listProjects());
-      alert(
-        'Could not change visibility. Make sure this project has been synced.',
-      );
+      alert('Could not change visibility on that project.');
     }
   }
 
@@ -317,12 +352,10 @@ export default function App() {
     if (!name || !name.trim()) return;
     const dup = duplicateProject(source, name.trim());
     setSavedProjects(listProjects());
-    if (auth.kind === 'signed-in') {
-      void saveRemoteProject(dup);
-    }
     // Switch to the new project so the user can immediately edit it.
     loadSnapshot(dup);
     setView('editor');
+    if (auth.kind === 'signed-in') void pushAndMigrate(dup);
   }
 
   // Reconcile local ↔ remote: push any local-only projects up, pull newer
@@ -352,63 +385,91 @@ export default function App() {
     setSyncing(true);
     setSyncMessage(null);
     try {
-      // Step 1: dedupe local by name (earlier broken sync passes wrote
+      // Step 1a: dedupe local by name (earlier broken sync passes wrote
       // multiple entries per project — collapse them to the newest before
       // pushing anything up).
-      const { removed } = dedupeLocalProjects();
+      const { removed: localRemoved } = dedupeLocalProjects();
+      // Step 1b: dedupe remote by name — delete server-side duplicates that
+      // accumulated when every Save used to create a fresh PB record. Keeps
+      // the most-recently-updated row per name; the rest are deleted.
+      const remoteRemoved = await dedupeRemoteByName();
+
       const local = listProjects();
-      console.log('[sync] local projects:', local.length, local.map((p) => p.name));
-      if (removed) console.log('[sync] removed', removed, 'local duplicates');
       const remote = await listRemoteProjects();
+      console.log('[sync] local projects:', local.length, local.map((p) => p.name));
       console.log('[sync] remote projects:', remote.length, remote.map((r) => r.name));
+      if (localRemoved) console.log('[sync] removed', localRemoved, 'local duplicates');
+      if (remoteRemoved) console.log('[sync] removed', remoteRemoved, 'remote duplicates');
 
       const remoteById = new globalThis.Map<string, typeof remote[number]>(
         remote.map((r) => [r.id, r]),
       );
-      const localById = new globalThis.Map<string, ProjectSnapshot>(
-        local.map((p) => [p.id, p]),
+      // Name-based fallback: after dedupe, each name maps to at most one
+      // remote row. Lets an unmigrated UUID local find its PB twin without
+      // pushing yet another copy.
+      const remoteByName = new globalThis.Map<string, typeof remote[number]>(
+        remote.map((r) => [r.name, r]),
       );
 
       let pushed = 0;
       let pulled = 0;
+      const matchedRemoteIds = new globalThis.Set<string>();
       const failures: string[] = [];
 
+      function migrateLocalId(lp: ProjectSnapshot, newId: string) {
+        if (lp.id === newId) return;
+        deleteProject(lp.id);
+        saveProject({ ...lp, id: newId });
+        if (projectIdRef.current === lp.id) {
+          projectIdRef.current = newId;
+          setProjectId(newId);
+        }
+      }
+
       for (const lp of local) {
-        if (!remoteById.has(lp.id)) {
+        const r = remoteById.get(lp.id) ?? remoteByName.get(lp.name) ?? null;
+
+        if (!r) {
+          // No remote twin — push.
           const row = await saveRemoteProject(lp);
           if (row) {
             pushed++;
-            // PB may have assigned a new id (when ours didn't pass its 15-char
-            // validation). Migrate the local copy to use the new id so future
-            // syncs match up.
-            if (row.id !== lp.id) {
-              deleteProject(lp.id);
-              const migrated = { ...lp, id: row.id };
-              saveProject(migrated);
-              if (lp.id === projectId) setProjectId(row.id);
-            }
+            matchedRemoteIds.add(row.id);
+            migrateLocalId(lp, row.id);
           } else {
             failures.push(lp.name);
             console.warn('[sync] failed to push', lp.id, lp.name);
           }
+          continue;
         }
-      }
-      for (const r of remote) {
-        const lp = localById.get(r.id);
+
+        matchedRemoteIds.add(r.id);
+        // Adopt PB id locally so future syncs match by id.
+        migrateLocalId(lp, r.id);
+
         const rTs = new Date(r.updated_at).getTime();
-        if (!lp || rTs > lp.updatedAt) {
+        if (rTs > lp.updatedAt) {
           saveProject(r.snapshot);
           pulled++;
         } else if (lp.updatedAt > rTs) {
-          const row = await saveRemoteProject(lp);
+          const row = await saveRemoteProject({ ...lp, id: r.id });
           if (row) pushed++;
         }
       }
+
+      // Remote-only entries: pull them down.
+      for (const r of remote) {
+        if (matchedRemoteIds.has(r.id)) continue;
+        saveProject(r.snapshot);
+        pulled++;
+      }
+
       setSavedProjects(listProjects());
 
       const parts: string[] = [];
-      if (removed) parts.push(`deduped ${removed} local`);
-      parts.push(`local ${local.length}`);
+      if (localRemoved) parts.push(`deduped ${localRemoved} local`);
+      if (remoteRemoved) parts.push(`deduped ${remoteRemoved} remote`);
+      parts.push(`local ${listProjects().length}`);
       parts.push(`remote ${remote.length}`);
       if (pushed) parts.push(`↑ ${pushed}`);
       if (pulled) parts.push(`↓ ${pulled}`);
@@ -442,9 +503,9 @@ export default function App() {
     // If named (already in saved list), overwrite. Else prompt via SaveAs.
     if (savedProjects.find((p) => p.id === projectId)) {
       saveProject(currentSnapshot);
-      if (auth.kind === 'signed-in') void saveRemoteProject(currentSnapshot);
       setSavedProjects(listProjects());
       setLastSavedKey(currentKey);
+      if (auth.kind === 'signed-in') void pushAndMigrate(currentSnapshot);
     } else {
       handleSaveAs(projectName || 'my project');
     }

@@ -6,6 +6,7 @@ import {
   bucketLineColor,
   buildProfile,
   buildProfileFromPlan,
+  categorizeClimb,
   gradColor,
   lineColor,
   sampleEle,
@@ -88,6 +89,44 @@ describe('buildProfile', () => {
     const seg = prof.segments[0];
     expect(seg.maxGradient).toBeGreaterThanOrEqual(seg.avgGradient - 1);
     expect(seg.minGradient).toBeLessThanOrEqual(seg.maxGradient + 0.001);
+  });
+});
+
+describe('categorizeClimb', () => {
+  it('classifies wall-style ramps (≥15% max) as epic regardless of length', () => {
+    expect(categorizeClimb(2.1, 25, 303)).toBe('epic'); // Hardknott shape
+    expect(categorizeClimb(0.5, 16, 80)).toBe('epic'); // tiny but brutal
+  });
+
+  it('classifies brutal short climbs (≥12% with ≥150m ascent) as epic', () => {
+    expect(categorizeClimb(2.7, 14, 162)).toBe('epic'); // Wrynose shape
+    // Below the ascent floor — drops to steep instead.
+    expect(categorizeClimb(1.0, 14, 100)).toBe('steep');
+  });
+
+  it('classifies sustained long-and-steep (≥5km @ ≥12%) as epic', () => {
+    expect(categorizeClimb(6, 13, 300)).toBe('epic');
+  });
+
+  it('classifies any climb with ≥500m ascent as epic', () => {
+    expect(categorizeClimb(10, 7, 600)).toBe('epic');
+  });
+
+  it('classifies long Alpine-style climbs (≥10km @ ≥8%) as epic', () => {
+    expect(categorizeClimb(12, 9, 400)).toBe('epic');
+  });
+
+  it('classifies short steep rollers (≥10%, not epic) as steep', () => {
+    expect(categorizeClimb(1.5, 11, 100)).toBe('steep');
+  });
+
+  it('classifies long gentle drags (≥5km, <10% max) as long', () => {
+    expect(categorizeClimb(7, 6, 200)).toBe('long');
+  });
+
+  it('classifies short gentle rollers as mild', () => {
+    expect(categorizeClimb(2, 5, 60)).toBe('mild');
+    expect(categorizeClimb(0.5, 0, 0)).toBe('mild');
   });
 });
 

@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
   DEFAULT_BRIDGE,
+  clearAllLocalProjects,
+  dedupeLocalProjects,
   deleteProject,
   duplicateProject,
   emptySnapshot,
@@ -120,6 +122,77 @@ describe('duplicateProject', () => {
     expect(dup.cut.activeSliceId).toBeNull();
     // Original is untouched.
     expect(orig.stitch.bridges[0]!.id).toBe('b1');
+  });
+});
+
+describe('dedupeLocalProjects', () => {
+  it('returns kept list with no change when there are no duplicates', () => {
+    const a = emptySnapshot('a');
+    const b = emptySnapshot('b');
+    saveProject(a);
+    saveProject(b);
+    const { kept, removed } = dedupeLocalProjects();
+    expect(removed).toBe(0);
+    expect(kept).toHaveLength(2);
+    expect(listProjects()).toHaveLength(2);
+  });
+
+  it('keeps the most-recently-updated entry per name', () => {
+    const older: ProjectSnapshot = {
+      ...emptySnapshot('Same name'),
+      id: 'older1234567890',
+      updatedAt: 1000,
+    };
+    const newer: ProjectSnapshot = {
+      ...emptySnapshot('Same name'),
+      id: 'newer1234567890',
+      updatedAt: 2000,
+    };
+    // saveProject overwrites updatedAt — write the raw list instead.
+    localStorage.setItem(
+      'stacked:projects:v1',
+      JSON.stringify([older, newer]),
+    );
+    const { kept, removed } = dedupeLocalProjects();
+    expect(removed).toBe(1);
+    expect(kept).toHaveLength(1);
+    // The kept entry should be the one with id `newer...`.
+    expect(kept[0].id.startsWith('newer')).toBe(true);
+    // And localStorage is now mutated.
+    expect(listProjects()).toHaveLength(1);
+  });
+
+  it('collapses multiple duplicates across multiple names', () => {
+    const rows = [
+      { ...emptySnapshot('A'), id: 'a-old-15-chars1', updatedAt: 1 },
+      { ...emptySnapshot('A'), id: 'a-new-15-chars1', updatedAt: 5 },
+      { ...emptySnapshot('B'), id: 'b-old-15-chars1', updatedAt: 2 },
+      { ...emptySnapshot('B'), id: 'b-new-15-chars1', updatedAt: 6 },
+      { ...emptySnapshot('C'), id: 'c-only15-chars1', updatedAt: 3 },
+    ];
+    localStorage.setItem('stacked:projects:v1', JSON.stringify(rows));
+    const { kept, removed } = dedupeLocalProjects();
+    expect(removed).toBe(2);
+    expect(kept).toHaveLength(3);
+    const names = kept.map((p) => p.name).sort();
+    expect(names).toEqual(['A', 'B', 'C']);
+  });
+});
+
+describe('clearAllLocalProjects', () => {
+  it('wipes both the saved-projects list and the working set', () => {
+    saveProject(emptySnapshot('foo'));
+    saveWorking(emptySnapshot('working'));
+    expect(listProjects()).toHaveLength(1);
+    expect(loadWorking()).not.toBeNull();
+    clearAllLocalProjects();
+    expect(listProjects()).toEqual([]);
+    expect(loadWorking()).toBeNull();
+  });
+
+  it('is a no-op when there is nothing to clear', () => {
+    expect(() => clearAllLocalProjects()).not.toThrow();
+    expect(listProjects()).toEqual([]);
   });
 });
 

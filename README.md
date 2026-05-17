@@ -29,7 +29,7 @@ rides — a 60km Saturday loop that happens to contain two climbs worth keeping.
 STACKED works in reverse too: import a long ride, drag handles to mark slices,
 save each as a standalone GPX.
 
-Everything is client-side. No backend, no signup, no privacy surface, deploys
+Everything is client-side. No backend, no privacy surface, deploys
 to anything that hosts static HTML.
 
 ---

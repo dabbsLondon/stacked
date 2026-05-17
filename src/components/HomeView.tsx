@@ -130,7 +130,7 @@ export function HomeView({
           </div>
         ) : (
           <div className="home-nav-meta mono">
-            v0.2 · client-side · no signup
+            v0.2 · client-side
           </div>
         )}
       </nav>
@@ -171,7 +171,7 @@ export function HomeView({
         <div className="home-hero-mask" aria-hidden="true" />
 
         <div className="home-hero-content">
-          <span className="home-badge mono">v0.1 · browser only · no signup</span>
+          <span className="home-badge mono">v0.1 · browser only</span>
           <h1 className="home-title">STACKED</h1>
           <p className="home-tagline">
             Splice climbs together. Cut them out of long rides.
@@ -302,8 +302,7 @@ export function HomeView({
       </section>
 
       <footer className="home-foot mono">
-        100% browser · GPX in, GPX out · no servers, no signup, no privacy
-        surface
+        100% browser · GPX in, GPX out · no servers, no privacy surface
       </footer>
       </div>
     </div>

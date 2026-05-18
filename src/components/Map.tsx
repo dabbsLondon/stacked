@@ -10,6 +10,10 @@ interface Props {
   slices?: Slice[];
   activeSliceId?: string | null;
   slicePointsFor?: (slice: Slice) => Point[];
+  // True when the rendered route is a stitched/spliced franken-ride that
+  // doesn't exist on Earth. Shows a cheeky badge so nobody tries to
+  // follow it with actual wheels.
+  synthetic?: boolean;
 }
 
 export function Map({
@@ -18,6 +22,7 @@ export function Map({
   slices,
   activeSliceId,
   slicePointsFor,
+  synthetic = false,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -200,8 +205,10 @@ export function Map({
   return (
     <div className="map-wrap">
       <div ref={containerRef} className="map" />
-      {points.length >= 2 && (
-        <div className="map-badge mono">SYNTHETIC ROUTE</div>
+      {synthetic && points.length >= 2 && (
+        <div className="map-badge mono">
+          FRANKENROUTE · NO BIRD HAS FLOWN THIS
+        </div>
       )}
     </div>
   );

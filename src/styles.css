@@ -1936,17 +1936,28 @@ button:disabled {
 }
 
 /* ===== map ===== */
+.map-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2.5vh 2.5vw;
+}
+
 .map-floating {
-  position: absolute;
-  top: 14px;
-  right: 14px;
-  width: 320px;
-  height: 220px;
-  z-index: 10;
-  border-radius: 12px;
-  overflow: hidden;
+  position: relative;
+  width: 95vw;
+  height: 95vh;
+  background: var(--bg);
   border: 1px solid var(--border-hi);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.75);
   display: flex;
   flex-direction: column;
 }
@@ -1966,16 +1977,16 @@ button:disabled {
 
 .map-close {
   position: absolute;
-  top: 6px;
-  left: 6px;
+  top: 12px;
+  left: 12px;
   z-index: 600;
-  width: 22px;
-  height: 22px;
+  width: 34px;
+  height: 34px;
   border-radius: 999px;
   border: 1px solid var(--border-hi);
   background: rgba(10, 10, 12, 0.85);
   color: var(--text);
-  font-size: 14px;
+  font-size: 20px;
   line-height: 1;
   display: flex;
   align-items: center;
@@ -1997,15 +2008,15 @@ button:disabled {
 
 .map-badge {
   position: absolute;
-  top: 8px;
-  right: 8px;
+  top: 12px;
+  right: 12px;
   z-index: 500;
-  padding: 3px 8px;
+  padding: 6px 14px;
   border-radius: 999px;
   background: rgba(10, 10, 12, 0.85);
   border: 1px solid var(--teal);
   color: var(--teal);
-  font-size: 8px;
+  font-size: 11px;
   font-weight: 500;
   letter-spacing: 0.18em;
   text-transform: uppercase;

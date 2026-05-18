@@ -1147,16 +1147,24 @@ export default function App() {
               <>
                 <ElevationChart profile={stitchProfile} />
                 {mapOpen && (
-                  <div className="map-floating">
-                    <button
-                      className="map-close mono"
-                      onClick={() => setMapOpen(false)}
-                      aria-label="close map"
-                      title="close map"
+                  <div
+                    className="map-overlay"
+                    onClick={() => setMapOpen(false)}
+                  >
+                    <div
+                      className="map-floating"
+                      onClick={(e) => e.stopPropagation()}
                     >
-                      ×
-                    </button>
-                    <Map points={stitched} profile={stitchProfile} />
+                      <button
+                        className="map-close mono"
+                        onClick={() => setMapOpen(false)}
+                        aria-label="close map"
+                        title="close map"
+                      >
+                        ×
+                      </button>
+                      <Map points={stitched} profile={stitchProfile} synthetic />
+                    </div>
                   </div>
                 )}
               </>
@@ -1181,22 +1189,30 @@ export default function App() {
                 onUpdateSliceRange={updateSliceRange}
               />
               {mapOpen && (
-                <div className="map-floating">
-                  <button
-                    className="map-close mono"
-                    onClick={() => setMapOpen(false)}
-                    aria-label="close map"
-                    title="close map"
+                <div
+                  className="map-overlay"
+                  onClick={() => setMapOpen(false)}
+                >
+                  <div
+                    className="map-floating"
+                    onClick={(e) => e.stopPropagation()}
                   >
-                    ×
-                  </button>
-                  <Map
-                    points={cutSource.points}
-                    profile={cutProfile}
-                    slices={slices}
-                    activeSliceId={activeSliceId}
-                    slicePointsFor={slicePoints}
-                  />
+                    <button
+                      className="map-close mono"
+                      onClick={() => setMapOpen(false)}
+                      aria-label="close map"
+                      title="close map"
+                    >
+                      ×
+                    </button>
+                    <Map
+                      points={cutSource.points}
+                      profile={cutProfile}
+                      slices={slices}
+                      activeSliceId={activeSliceId}
+                      slicePointsFor={slicePoints}
+                    />
+                  </div>
                 </div>
               )}
               {activeSlice && cutSource && (

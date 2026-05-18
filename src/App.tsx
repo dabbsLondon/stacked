@@ -73,6 +73,9 @@ export default function App() {
   );
   const [error, setError] = useState<string | null>(null);
   const [threeDOpen, setThreeDOpen] = useState(false);
+  // Floating map starts hidden so it stops obscuring the elevation chart.
+  // Toggle via the 🗺️ MAP button in the header.
+  const [mapOpen, setMapOpen] = useState(false);
   const [threeDOverride, setThreeDOverride] = useState<{
     points: Climb['points'];
     title: string;
@@ -930,6 +933,18 @@ export default function App() {
         </div>
         <div className="header-actions">
           <button
+            className={`btn ${mapOpen ? 'btn-toggle-on' : ''}`}
+            onClick={() => setMapOpen((o) => !o)}
+            disabled={
+              mode === 'stitch'
+                ? climbs.length === 0
+                : !cutSource
+            }
+            title={mapOpen ? 'hide map' : 'show map'}
+          >
+            🗺️ MAP
+          </button>
+          <button
             className="btn"
             onClick={() => setThreeDOpen(true)}
             disabled={
@@ -1131,9 +1146,19 @@ export default function App() {
             ) : (
               <>
                 <ElevationChart profile={stitchProfile} />
-                <div className="map-floating">
-                  <Map points={stitched} profile={stitchProfile} />
-                </div>
+                {mapOpen && (
+                  <div className="map-floating">
+                    <button
+                      className="map-close mono"
+                      onClick={() => setMapOpen(false)}
+                      aria-label="close map"
+                      title="close map"
+                    >
+                      ×
+                    </button>
+                    <Map points={stitched} profile={stitchProfile} />
+                  </div>
+                )}
               </>
             )
           ) : !cutSource || !cutProfile ? (
@@ -1155,15 +1180,25 @@ export default function App() {
                 onActivateSlice={setActiveSliceId}
                 onUpdateSliceRange={updateSliceRange}
               />
-              <div className="map-floating">
-                <Map
-                  points={cutSource.points}
-                  profile={cutProfile}
-                  slices={slices}
-                  activeSliceId={activeSliceId}
-                  slicePointsFor={slicePoints}
-                />
-              </div>
+              {mapOpen && (
+                <div className="map-floating">
+                  <button
+                    className="map-close mono"
+                    onClick={() => setMapOpen(false)}
+                    aria-label="close map"
+                    title="close map"
+                  >
+                    ×
+                  </button>
+                  <Map
+                    points={cutSource.points}
+                    profile={cutProfile}
+                    slices={slices}
+                    activeSliceId={activeSliceId}
+                    slicePointsFor={slicePoints}
+                  />
+                </div>
+              )}
               {activeSlice && cutSource && (
                 <SliceDetail
                   slice={activeSlice}

@@ -1964,6 +1964,37 @@ button:disabled {
   background: #0e0e11;
 }
 
+.map-close {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  z-index: 600;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  border: 1px solid var(--border-hi);
+  background: rgba(10, 10, 12, 0.85);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+.map-close:hover {
+  background: rgba(30, 30, 36, 0.95);
+}
+
+.btn.btn-toggle-on {
+  background: var(--orange);
+  color: var(--bg);
+  border-color: var(--orange);
+}
+
 .map-badge {
   position: absolute;
   top: 8px;

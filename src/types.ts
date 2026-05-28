@@ -11,6 +11,8 @@ export type Climb = {
   distanceKm: number;
   ascentM: number;
   avgGradient: number;
+  maxGradient: number;
+  difficulty: number;
 };
 
 export type Mode = 'stitch' | 'cut';

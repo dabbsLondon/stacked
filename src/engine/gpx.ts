@@ -26,28 +26,48 @@ export function parseGpx(xml: string, fallbackName: string): Climb {
 }
 
 export function makeClimb(name: string, points: Point[]): Climb {
-  const { distanceKm, ascentM, avgGradient } = computeStats(points);
+  const stats = computeStats(points);
   return {
     id: crypto.randomUUID(),
     name,
     points,
-    distanceKm,
-    ascentM,
-    avgGradient,
+    ...stats,
   };
 }
 
 export function computeStats(points: Point[]) {
   let distance = 0;
   let ascent = 0;
+  const cumDist: number[] = [0];
   for (let i = 1; i < points.length; i++) {
     distance += haversine(points[i - 1], points[i]);
+    cumDist.push(distance);
     const delta = points[i].ele - points[i - 1].ele;
     if (delta > 0) ascent += delta;
   }
   const distanceKm = distance / 1000;
   const avgGradient = distanceKm > 0 ? ascent / (distanceKm * 10) : 0;
-  return { distanceKm, ascentM: ascent, avgGradient };
+  const maxGradient = computeMaxGradient(points, cumDist);
+  const difficulty =
+    distance > 0 ? (ascent * ascent) / (distance * 10) : 0;
+  return { distanceKm, ascentM: ascent, avgGradient, maxGradient, difficulty };
+}
+
+const MAX_GRAD_WINDOW_M = 100;
+
+function computeMaxGradient(points: Point[], cumDist: number[]): number {
+  if (points.length < 2) return 0;
+  let max = 0;
+  let j = 0;
+  for (let i = 1; i < points.length; i++) {
+    while (j < i - 1 && cumDist[i] - cumDist[j + 1] >= MAX_GRAD_WINDOW_M) j++;
+    const seg = cumDist[i] - cumDist[j];
+    if (seg < 30) continue;
+    const rise = points[i].ele - points[j].ele;
+    const grad = (rise / seg) * 100;
+    if (grad > max) max = grad;
+  }
+  return max;
 }
 
 export function haversine(a: Point, b: Point): number {

@@ -107,6 +107,8 @@ describe('duplicateProject', () => {
           distanceKm: 0.1,
           ascentM: 1,
           avgGradient: 1,
+          maxGradient: 1,
+          difficulty: 0,
         },
         slices: [{ id: 'sl1', name: 'a', kmStart: 0, kmEnd: 0.05 }],
       },
@@ -229,6 +231,8 @@ describe('project migration', () => {
           distanceKm: 0.1,
           ascentM: 1,
           avgGradient: 1,
+          maxGradient: 1,
+          difficulty: 0,
         },
         slices: [
           { id: 's1', name: 'one', kmStart: 0, kmEnd: 0.05 },

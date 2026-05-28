@@ -35,8 +35,20 @@ export function ClimbList({
               </div>
               <div className="climb-name">{c.name}</div>
               <div className="climb-stats mono">
-                {c.distanceKm.toFixed(1)}km · +{Math.round(c.ascentM)}m ·{' '}
-                {c.avgGradient.toFixed(1)}%
+                {c.distanceKm.toFixed(1)}km · +{Math.round(c.ascentM)}m ·
+                {' '}avg {c.avgGradient.toFixed(1)}% · max{' '}
+                {c.maxGradient.toFixed(1)}%
+              </div>
+              <div className="climb-difficulty">
+                <span
+                  className={`difficulty-pill mono ${difficultyClass(c.difficulty)}`}
+                  title={`FIETS climb score: ${c.difficulty.toFixed(1)}`}
+                >
+                  {difficultyLabel(c.difficulty)}
+                </span>
+                <span className="difficulty-score mono">
+                  {c.difficulty.toFixed(1)}
+                </span>
               </div>
             </div>
             <div className="climb-actions">
@@ -93,6 +105,22 @@ interface BridgeRowProps {
   onAdd: (gapIdx: number) => void;
   onUpdate: (gapIdx: number, patch: Partial<Bridge>) => void;
   onRemove: (gapIdx: number) => void;
+}
+
+function difficultyLabel(d: number): string {
+  if (d < 1) return 'EASY';
+  if (d < 3) return 'MODERATE';
+  if (d < 5) return 'HARD';
+  if (d < 8) return 'SEVERE';
+  return 'HC';
+}
+
+function difficultyClass(d: number): string {
+  if (d < 1) return 'difficulty-easy';
+  if (d < 3) return 'difficulty-moderate';
+  if (d < 5) return 'difficulty-hard';
+  if (d < 8) return 'difficulty-severe';
+  return 'difficulty-hc';
 }
 
 const BRIDGE_PRESETS_KM = [0.5, 1, 2, 5];

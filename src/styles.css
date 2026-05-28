@@ -2500,6 +2500,46 @@ button:disabled {
   letter-spacing: 0.02em;
 }
 
+.climb-difficulty {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.difficulty-pill {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  padding: 3px 8px;
+  border-radius: 4px;
+  border: 1px solid currentColor;
+  line-height: 1;
+}
+
+.difficulty-score {
+  font-size: 10px;
+  color: var(--text-3);
+  letter-spacing: 0.06em;
+}
+
+.difficulty-easy {
+  color: #5eead4;
+}
+.difficulty-moderate {
+  color: #facc15;
+}
+.difficulty-hard {
+  color: #ff9a3c;
+}
+.difficulty-severe {
+  color: #ff5f1f;
+}
+.difficulty-hc {
+  color: #ff3b3b;
+  background: rgba(255, 59, 59, 0.08);
+}
+
 .climb-actions {
   display: flex;
   flex-direction: column;

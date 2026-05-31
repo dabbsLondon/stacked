@@ -862,13 +862,15 @@
     const bx2 = x2 + R2 * Math.cos(phi - alpha);
     const by2 = y2 + R2 * Math.sin(phi - alpha);
 
-    // Arc sweeps along outside of each pulley
+    // Chain wraps on each pulley's far side from the other.
+    // Cog (smaller, R2): small arc on the side away from chainring → la=0
+    // Chainring (larger, R1): large arc on the side away from cog    → la=1
     return [
       `M ${tx1.toFixed(1)} ${ty1.toFixed(1)}`,
       `L ${tx2.toFixed(1)} ${ty2.toFixed(1)}`,
       `A ${R2} ${R2} 0 0 1 ${bx2.toFixed(1)} ${by2.toFixed(1)}`,
       `L ${bx1.toFixed(1)} ${by1.toFixed(1)}`,
-      `A ${R1} ${R1} 0 0 1 ${tx1.toFixed(1)} ${ty1.toFixed(1)}`,
+      `A ${R1} ${R1} 0 1 0 ${tx1.toFixed(1)} ${ty1.toFixed(1)}`,
       'Z'
     ].join(' ');
   }

@@ -246,13 +246,29 @@
   <!-- ============ CONTROLS ============ -->
   <aside class="panel" id="controls">
     <h2>Drivetrain</h2>
-    <div class="grid2">
-      <label class="field">Chainring (teeth)
-        <input id="chainring" type="number" min="20" max="60" step="1" value="30" />
+    <label class="field">Front chainring(s) — comma-separated for 2x/3x
+      <input id="front" type="text" value="32" placeholder="32   ·   50,34   ·   48,36,26" autocomplete="off" />
+    </label>
+    <label class="field" style="margin-top:8px;">Cassette — list or smallest-largest
+      <input id="cassette" type="text" value="10,12,14,16,18,21,24,28,32,36,42,51" placeholder="11-30   ·   10,12,14,…,51" autocomplete="off" />
+    </label>
+    <div class="grid2" style="margin-top:8px;">
+      <label class="field">Active front
+        <select id="frontSel"></select>
       </label>
-      <label class="field">Cog (teeth)
-        <input id="cog" type="number" min="9" max="52" step="1" value="36" />
+      <label class="field">Active rear
+        <select id="rearSel"></select>
       </label>
+    </div>
+    <div class="preset-row" style="margin-top:8px;" id="driveChips">
+      <span class="chip" data-front="32"    data-rear="10,12,14,16,18,21,24,28,32,36,42,51">1×12 MTB</span>
+      <span class="chip" data-front="40"    data-rear="11,13,15,17,19,21,24,28,32,36,42,46">1×12 gravel</span>
+      <span class="chip" data-front="50,34" data-rear="11,12,13,14,15,17,19,21,24,28,32">2×11 road</span>
+      <span class="chip" data-front="48,32" data-rear="11,13,15,17,19,21,24,28,32,36,42">2×11 GRX</span>
+      <span class="chip" data-front="46"    data-rear="16">Singlespeed</span>
+    </div>
+
+    <div class="grid2" style="margin-top:14px;">
       <label class="field">Wheel size
         <select id="wheel">
           <option value="2.105">700×25C (2.105 m)</option>
@@ -570,6 +586,17 @@
   </aside>
 </div>
 
+<div class="layout" style="margin-top:-8px;">
+  <aside class="panel" style="grid-column: 1 / -1;">
+    <h2>Gear chart — every gear in your drivetrain</h2>
+    <div style="font-size:11px;color:var(--muted);margin:-6px 0 10px;">
+      Ratio · cadence at <span id="gearChartSpeed">15</span> kph. Click any cell to engage it.
+      Active gear is outlined in <span style="color:var(--accent);">cyan</span>.
+    </div>
+    <div id="gearChart" style="overflow-x:auto;"></div>
+  </aside>
+</div>
+
 <div class="footer-note">
   Power model: <code>P = (Crr·m·g·cosθ + 0.5·CdA·ρ·v² + m·g·sinθ) · v / efficiency</code>.
   Air density ρ ≈ 1.225 kg/m³, g = 9.81 m/s². Negative wattages on descents are clamped to 0 (you'd be coasting).
@@ -583,8 +610,10 @@
 
   // ----------- Inputs -----------
   const inputs = {
-    chainring: $('chainring'),
-    cog: $('cog'),
+    front: $('front'),
+    cassette: $('cassette'),
+    frontSel: $('frontSel'),
+    rearSel: $('rearSel'),
     wheel: $('wheel'),
     eff: $('eff'),
     rider: $('rider'),
@@ -594,6 +623,62 @@
     speed: $('speed'),
     grade: $('grade'),
   };
+
+  // ----------- Tooth parsing -----------
+  // Accepts "32", "11-46" (geometric range), or "10,12,14,...".
+  // Returns a deduped, sorted ascending array of finite positive integers.
+  function parseTeeth(str) {
+    if (!str) return [];
+    const t = String(str).trim();
+    if (!t) return [];
+    if (/^\s*\d+\s*-\s*\d+\s*$/.test(t)) {
+      const [a, b] = t.split('-').map(s => parseInt(s.trim(), 10));
+      if (!Number.isFinite(a) || !Number.isFinite(b) || a <= 0 || b <= 0) return [];
+      const lo = Math.min(a, b), hi = Math.max(a, b);
+      if (lo === hi) return [lo];
+      const n = 12;
+      const r = Math.pow(hi / lo, 1 / (n - 1));
+      const seq = Array.from({ length: n }, (_, i) => Math.round(lo * Math.pow(r, i)));
+      return [...new Set(seq)].filter(v => v > 0 && v < 200).sort((x, y) => x - y);
+    }
+    const nums = t.split(/[,\s;]+/)
+      .map(s => parseInt(s, 10))
+      .filter(n => Number.isFinite(n) && n > 0 && n < 200);
+    return [...new Set(nums)].sort((x, y) => x - y);
+  }
+
+  function fillSelect(sel, list, preferred, biggestFirst) {
+    sel.innerHTML = '';
+    const ordered = biggestFirst ? [...list].sort((a, b) => b - a) : [...list];
+    for (const v of ordered) {
+      const opt = document.createElement('option');
+      opt.value = v;
+      opt.textContent = v + 'T';
+      sel.appendChild(opt);
+    }
+    if (preferred != null && list.includes(preferred)) {
+      sel.value = preferred;
+    } else {
+      sel.value = ordered[0];
+    }
+  }
+
+  function refreshGearSelectors() {
+    const fList = parseTeeth(inputs.front.value);
+    const rList = parseTeeth(inputs.cassette.value);
+    const finalFront = fList.length ? fList : [32];
+    const finalRear = rList.length ? rList : [36];
+    const prevFront = +inputs.frontSel.value;
+    const prevRear  = +inputs.rearSel.value;
+    fillSelect(inputs.frontSel, finalFront, prevFront, true);
+    // Default rear to the middle cog if no previous selection
+    const defaultRear = Number.isFinite(prevRear) && finalRear.includes(prevRear)
+      ? prevRear
+      : finalRear[Math.floor(finalRear.length / 2)];
+    fillSelect(inputs.rearSel, finalRear, defaultRear, false);
+    return { fList: finalFront, rList: finalRear };
+  }
+  refreshGearSelectors();
 
   // ----------- Slider fill -----------
   function paintSlider(el) {
@@ -691,9 +776,17 @@
   }
 
   function readState() {
+    const fList = parseTeeth(inputs.front.value);
+    const rList = parseTeeth(inputs.cassette.value);
+    const fronts = fList.length ? fList : [32];
+    const rears  = rList.length ? rList : [36];
+    const front  = +inputs.frontSel.value;
+    const rear   = +inputs.rearSel.value;
     return {
-      chainring: +inputs.chainring.value || 30,
-      cog: +inputs.cog.value || 36,
+      chainring: Number.isFinite(front) && front > 0 ? front : fronts[0],
+      cog:       Number.isFinite(rear)  && rear  > 0 ? rear  : rears[Math.floor(rears.length / 2)],
+      fList: fronts,
+      rList: rears,
       wheel: +inputs.wheel.value,
       eff: +inputs.eff.value,
       rider: +inputs.rider.value || 75,
@@ -873,6 +966,72 @@
   const presetSpeeds = [5, 10, 15, 20, 25, 30];
   const presetGrades = [0, 5, 10, 15, 20, 25, 30];
 
+  function renderGearChart(s) {
+    const root = $('gearChart');
+    root.innerHTML = '';
+    const fronts = [...s.fList].sort((a, b) => b - a); // big to small (hardest → easiest front)
+    const rears  = [...s.rList];                       // small to big (hardest → easiest rear)
+    const v = s.speed / 3.6;
+    const cadenceFor = ratio => (s.speed > 0 && ratio > 0) ? (v * 60) / (s.wheel * ratio) : 0;
+
+    const wrap = document.createElement('div');
+    wrap.style.display = 'grid';
+    wrap.style.gridTemplateColumns = `48px repeat(${rears.length}, minmax(56px, 1fr))`;
+    wrap.style.gap = '4px';
+    wrap.style.fontVariantNumeric = 'tabular-nums';
+
+    const corner = document.createElement('div');
+    corner.style.cssText = 'padding:6px 4px;color:#8a97b3;font-size:10px;text-align:center;letter-spacing:1px;';
+    corner.innerHTML = 'F&nbsp;\\ R';
+    wrap.appendChild(corner);
+
+    for (const r of rears) {
+      const h = document.createElement('div');
+      h.style.cssText = 'padding:6px 4px;color:#43e8d8;font-size:11px;text-align:center;font-weight:700;';
+      h.textContent = r + 'T';
+      wrap.appendChild(h);
+    }
+
+    for (const f of fronts) {
+      const lbl = document.createElement('div');
+      lbl.style.cssText = 'padding:6px 4px;color:#ffd166;font-size:11px;text-align:center;font-weight:700;align-self:center;';
+      lbl.textContent = f + 'T';
+      wrap.appendChild(lbl);
+
+      for (const r of rears) {
+        const ratio = f / r;
+        const rpm = cadenceFor(ratio);
+        const cell = document.createElement('button');
+        cell.type = 'button';
+        const isActive = f === s.chainring && r === s.cog;
+        cell.style.cssText = `
+          padding:6px 4px;border-radius:6px;text-align:center;cursor:pointer;
+          background:${isActive ? 'rgba(67,232,216,0.14)' : 'var(--bg-2)'};
+          border:1px solid ${isActive ? 'var(--accent)' : 'var(--line)'};
+          color:inherit;font:inherit;line-height:1.2;
+        `;
+        // Cadence colour cue: green 75-95, gold 60-75 or 95-110, red outside
+        let rpmColor = '#8a97b3';
+        if (rpm > 0) {
+          if (rpm >= 75 && rpm <= 95) rpmColor = '#7ee787';
+          else if (rpm >= 60 && rpm <= 110) rpmColor = '#ffd166';
+          else rpmColor = '#ff5d73';
+        }
+        cell.innerHTML = `
+          <div style="font-weight:700;color:${isActive ? '#43e8d8' : '#e6ecf5'};font-size:13px;">${ratio.toFixed(2)}</div>
+          <div style="font-size:10px;color:${rpmColor};">${rpm > 0 ? rpm.toFixed(0) + ' rpm' : '—'}</div>
+        `;
+        cell.addEventListener('click', () => {
+          inputs.frontSel.value = f;
+          inputs.rearSel.value = r;
+          render();
+        });
+        wrap.appendChild(cell);
+      }
+    }
+    root.appendChild(wrap);
+  }
+
   function renderPresets(s) {
     const pg = $('presetGrid'); pg.innerHTML = '';
     for (const sp of presetSpeeds) {
@@ -950,12 +1109,21 @@
     $('gravW').textContent = Math.round(r.grav) + ' W';
 
     renderPresets(s);
+    renderGearChart(s);
+    $('gearChartSpeed').textContent = s.speed.toFixed(s.speed % 1 === 0 ? 0 : 1);
   }
 
   // ----------- Wire events -----------
   Object.values(inputs).forEach(el => {
     el.addEventListener('input', render);
     el.addEventListener('change', render);
+  });
+  // Front / cassette text changes need to rebuild the active-gear dropdowns first.
+  ['front', 'cassette'].forEach(id => {
+    inputs[id].addEventListener('input', () => {
+      refreshGearSelectors();
+      render();
+    });
   });
   document.querySelectorAll('#speedChips .chip').forEach(c => {
     c.addEventListener('click', () => {
@@ -966,6 +1134,17 @@
   document.querySelectorAll('#gradeChips .chip').forEach(c => {
     c.addEventListener('click', () => {
       inputs.grade.value = c.dataset.grade;
+      render();
+    });
+  });
+  document.querySelectorAll('#driveChips .chip').forEach(c => {
+    c.addEventListener('click', () => {
+      inputs.front.value = c.dataset.front;
+      inputs.cassette.value = c.dataset.rear;
+      // Force-reset selectors to the defaults of the new drivetrain
+      inputs.frontSel.value = '';
+      inputs.rearSel.value  = '';
+      refreshGearSelectors();
       render();
     });
   });

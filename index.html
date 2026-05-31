@@ -246,12 +246,24 @@
   <!-- ============ CONTROLS ============ -->
   <aside class="panel" id="controls">
     <h2>Drivetrain</h2>
-    <label class="field">Front chainring(s) — comma-separated for 2x/3x
-      <input id="front" type="text" value="32" placeholder="32   ·   50,34   ·   48,36,26" autocomplete="off" />
+    <label class="field">Type
+      <select id="driveType">
+        <option value="sram-2x-road" selected>SRAM 2× Road (Red / Force / Rival AXS)</option>
+        <option value="sram-1x-road">SRAM 1× Road</option>
+        <option value="sram-xplr-1x">SRAM XPLR 1× (Gravel)</option>
+        <option value="sram-xplr-2x">SRAM XPLR 2× (Gravel)</option>
+        <option value="sram-eagle">SRAM Eagle 1× (MTB / wide-range)</option>
+        <option value="custom">Custom</option>
+      </select>
     </label>
-    <label class="field" style="margin-top:8px;">Cassette — list or smallest-largest
-      <input id="cassette" type="text" value="10,12,14,16,18,21,24,28,32,36,42,51" placeholder="11-30   ·   10,12,14,…,51" autocomplete="off" />
-    </label>
+    <div class="grid2" style="margin-top:8px;">
+      <label class="field">Chainring(s)
+        <select id="frontPreset"></select>
+      </label>
+      <label class="field">Cassette
+        <select id="cassettePreset"></select>
+      </label>
+    </div>
     <div class="grid2" style="margin-top:8px;">
       <label class="field">Active front
         <select id="frontSel"></select>
@@ -260,13 +272,15 @@
         <select id="rearSel"></select>
       </label>
     </div>
-    <div class="preset-row" style="margin-top:8px;" id="driveChips">
-      <span class="chip" data-front="32"    data-rear="10,12,14,16,18,21,24,28,32,36,42,51">1×12 MTB</span>
-      <span class="chip" data-front="40"    data-rear="11,13,15,17,19,21,24,28,32,36,42,46">1×12 gravel</span>
-      <span class="chip" data-front="50,34" data-rear="11,12,13,14,15,17,19,21,24,28,32">2×11 road</span>
-      <span class="chip" data-front="48,32" data-rear="11,13,15,17,19,21,24,28,32,36,42">2×11 GRX</span>
-      <span class="chip" data-front="46"    data-rear="16">Singlespeed</span>
-    </div>
+    <details style="margin-top:10px;">
+      <summary style="cursor:pointer;font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;">Custom teeth override</summary>
+      <label class="field" style="margin-top:8px;">Front teeth
+        <input id="front" type="text" value="50,37" placeholder="32   ·   50,37   ·   48,35,26" autocomplete="off" />
+      </label>
+      <label class="field" style="margin-top:8px;">Cassette teeth
+        <input id="cassette" type="text" value="10,11,12,13,14,15,17,19,21,23,25,28" placeholder="11-30   ·   10,12,14,…,51" autocomplete="off" />
+      </label>
+    </details>
 
     <div class="grid2" style="margin-top:14px;">
       <label class="field">Wheel size
@@ -610,6 +624,9 @@
 
   // ----------- Inputs -----------
   const inputs = {
+    driveType: $('driveType'),
+    frontPreset: $('frontPreset'),
+    cassettePreset: $('cassettePreset'),
     front: $('front'),
     cassette: $('cassette'),
     frontSel: $('frontSel'),
@@ -624,7 +641,65 @@
     grade: $('grade'),
   };
 
-  // ----------- Tooth parsing -----------
+  // ----------- SRAM 12-speed presets -----------
+  // Tooth counts sourced from published SRAM AXS / XPLR / Eagle cassette specs.
+  const SRAM = {
+    'sram-2x-road': {
+      label: 'SRAM 2× Road',
+      fronts: [[50,37], [48,35], [46,33], [43,30]],
+      cassettes: [
+        [10,11,12,13,14,15,16,17,19,21,23,26], // 10-26
+        [10,11,12,13,14,15,17,19,21,23,25,28], // 10-28
+        [10,11,12,13,14,15,17,19,21,24,27,30], // 10-30
+        [10,11,12,13,14,15,17,19,21,24,28,33], // 10-33
+        [10,11,12,13,14,15,17,19,21,24,28,36], // 10-36
+      ],
+    },
+    'sram-1x-road': {
+      label: 'SRAM 1× Road',
+      fronts: [[44], [46], [48], [50]],
+      cassettes: [
+        [10,11,12,13,14,15,16,17,19,21,23,26],
+        [10,11,12,13,14,15,17,19,21,23,25,28],
+        [10,11,12,13,14,15,17,19,21,24,27,30],
+        [10,11,12,13,14,15,17,19,21,24,28,33],
+        [10,11,12,13,14,15,17,19,21,24,28,36],
+      ],
+    },
+    'sram-xplr-1x': {
+      label: 'SRAM XPLR 1×',
+      fronts: [[38], [40], [42], [44], [46]],
+      cassettes: [
+        [10,11,13,15,17,19,21,24,28,32,38,44], // XG-1271 10-44
+        [10,11,13,15,17,19,21,24,28,32,38,46], // newer XPLR 10-46
+      ],
+    },
+    'sram-xplr-2x': {
+      label: 'SRAM XPLR 2×',
+      fronts: [[46,33], [43,30]],
+      cassettes: [
+        [10,11,13,15,17,19,21,24,28,32,38,44],
+        [10,11,13,15,17,19,21,24,28,32,38,46],
+      ],
+    },
+    'sram-eagle': {
+      label: 'SRAM Eagle 1×',
+      fronts: [[30], [32], [34], [36], [38]],
+      cassettes: [
+        [10,12,14,16,18,21,24,28,32,36,42,50], // 10-50
+        [10,12,14,16,18,21,24,28,32,36,42,52], // 10-52
+      ],
+    },
+  };
+
+  function frontLabel(arr) {
+    return arr.length === 1 ? arr[0] + 'T' : arr.join('/') + 'T';
+  }
+  function cassetteLabel(arr) {
+    return arr[0] + '–' + arr[arr.length - 1] + 'T (' + arr.length + 'sp)';
+  }
+
+  // ----------- Tooth parsing for the custom override -----------
   // Accepts "32", "11-46" (geometric range), or "10,12,14,...".
   // Returns a deduped, sorted ascending array of finite positive integers.
   function parseTeeth(str) {
@@ -667,18 +742,62 @@
     const fList = parseTeeth(inputs.front.value);
     const rList = parseTeeth(inputs.cassette.value);
     const finalFront = fList.length ? fList : [32];
-    const finalRear = rList.length ? rList : [36];
-    const prevFront = +inputs.frontSel.value;
-    const prevRear  = +inputs.rearSel.value;
+    const finalRear  = rList.length ? rList : [36];
+    const prevFront  = +inputs.frontSel.value;
+    const prevRear   = +inputs.rearSel.value;
     fillSelect(inputs.frontSel, finalFront, prevFront, true);
-    // Default rear to the middle cog if no previous selection
     const defaultRear = Number.isFinite(prevRear) && finalRear.includes(prevRear)
       ? prevRear
       : finalRear[Math.floor(finalRear.length / 2)];
     fillSelect(inputs.rearSel, finalRear, defaultRear, false);
     return { fList: finalFront, rList: finalRear };
   }
-  refreshGearSelectors();
+
+  // ----------- Drive-type → preset dropdowns -----------
+  function populatePresetDropdowns(typeKey) {
+    const t = SRAM[typeKey];
+    if (!t) {
+      inputs.frontPreset.innerHTML = '<option>—</option>';
+      inputs.cassettePreset.innerHTML = '<option>—</option>';
+      inputs.frontPreset.disabled = true;
+      inputs.cassettePreset.disabled = true;
+      return;
+    }
+    inputs.frontPreset.disabled = false;
+    inputs.cassettePreset.disabled = false;
+    inputs.frontPreset.innerHTML = '';
+    t.fronts.forEach((arr, i) => {
+      const o = document.createElement('option');
+      o.value = i;
+      o.textContent = frontLabel(arr);
+      inputs.frontPreset.appendChild(o);
+    });
+    inputs.cassettePreset.innerHTML = '';
+    t.cassettes.forEach((arr, i) => {
+      const o = document.createElement('option');
+      o.value = i;
+      o.textContent = cassetteLabel(arr);
+      inputs.cassettePreset.appendChild(o);
+    });
+  }
+
+  function applyDrivePreset() {
+    const typeKey = inputs.driveType.value;
+    const t = SRAM[typeKey];
+    if (!t) return; // custom — leave text inputs alone
+    const fi = +inputs.frontPreset.value || 0;
+    const ci = +inputs.cassettePreset.value || 0;
+    inputs.front.value = t.fronts[fi].join(',');
+    inputs.cassette.value = t.cassettes[ci].join(',');
+    // Reset active gear selectors so they pick sensible defaults for the new drivetrain
+    inputs.frontSel.value = '';
+    inputs.rearSel.value = '';
+    refreshGearSelectors();
+  }
+
+  // Initial: SRAM 2x Road, first chainring + first cassette
+  populatePresetDropdowns(inputs.driveType.value);
+  applyDrivePreset();
 
   // ----------- Slider fill -----------
   function paintSlider(el) {
@@ -1118,13 +1237,32 @@
     el.addEventListener('input', render);
     el.addEventListener('change', render);
   });
-  // Front / cassette text changes need to rebuild the active-gear dropdowns first.
+
+  // Drive-type switch: repopulate the preset dropdowns + apply first preset.
+  inputs.driveType.addEventListener('change', () => {
+    populatePresetDropdowns(inputs.driveType.value);
+    applyDrivePreset();
+    render();
+  });
+  // Chainring / cassette preset change: write through to the text inputs.
+  ['frontPreset', 'cassettePreset'].forEach(id => {
+    inputs[id].addEventListener('change', () => {
+      applyDrivePreset();
+      render();
+    });
+  });
+  // Manual edit of the custom text inputs: switch type → Custom and refresh.
   ['front', 'cassette'].forEach(id => {
     inputs[id].addEventListener('input', () => {
+      if (inputs.driveType.value !== 'custom') {
+        inputs.driveType.value = 'custom';
+        populatePresetDropdowns('custom');
+      }
       refreshGearSelectors();
       render();
     });
   });
+
   document.querySelectorAll('#speedChips .chip').forEach(c => {
     c.addEventListener('click', () => {
       inputs.speed.value = c.dataset.speed;
@@ -1134,17 +1272,6 @@
   document.querySelectorAll('#gradeChips .chip').forEach(c => {
     c.addEventListener('click', () => {
       inputs.grade.value = c.dataset.grade;
-      render();
-    });
-  });
-  document.querySelectorAll('#driveChips .chip').forEach(c => {
-    c.addEventListener('click', () => {
-      inputs.front.value = c.dataset.front;
-      inputs.cassette.value = c.dataset.rear;
-      // Force-reset selectors to the defaults of the new drivetrain
-      inputs.frontSel.value = '';
-      inputs.rearSel.value  = '';
-      refreshGearSelectors();
       render();
     });
   });
